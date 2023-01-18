@@ -4,6 +4,15 @@ README
 Skene
 <h4> ¶ README updated: <i>Jan-18-2023</i> ¶ </h4>
 
+# About
+
+Prioritise cell-type-specific gene targets from the [Rare Disease
+Celltyping](https://neurogenomics.github.io/rare_disease_celltyping_apps/home/)
+project.
+
+Thesis project by Momoko Otani, supervised by Nathan Skene and Brian
+Schilder.
+
 ## Rmarkdown reports
 
 ### [Prioritise targets](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/prioritise_targets)
