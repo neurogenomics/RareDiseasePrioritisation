@@ -1,6 +1,6 @@
 ---
 title: "README"
-author: "Momoko Otani, Brian M. Schilder, Nathan G. Skene"
+author: "<h4>Authors:</h4> Momoko Otani, Brian M. Schilder, Nathan G. Skene"
 date: "<h4>README updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
 output:
   github_document
@@ -9,4 +9,4 @@ output:
 
 ## Rmarkdown reports
 
-### Prioritise targets
+### [Prioritise targets](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/prioritise_targets)
