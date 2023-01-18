@@ -1,0 +1,93 @@
+---
+title: "prioritise_targets"
+author: "Momoko Otani, Brian M. Schilder, Nathan G. Skene"
+date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
+output:
+  html_document
+---
+
+# Install packages
+
+```{r, warning=FALSE, message=FALSE}
+if(!require("remotes")) install.packages("remotes")
+if(!require("dplyr")) install.packages("dplyr")
+if(!require("MultiEWCE")) remotes::install_github("neurogenomics/MutltiEWCE")
+```
+
+# Prioritise targets
+
+## Gather data
+
+```{r}
+results <- MultiEWCE::load_example_results()
+ctd <- MultiEWCE::load_example_ctd()
+```
+
+## Run filtering/sorting procedure
+
+### Top 3 targets per cell type-phenotype association
+
+```{r} 
+top_targets <- MultiEWCE::prioritise_targets(results = results,
+                                             ctd = ctd,
+                                             top_n = 3)
+```
+
+### All  cell type-phenotype associations that met criterion
+
+```{r}
+all_targets <- MultiEWCE::prioritise_targets(results = results,
+                                             ctd = ctd, 
+                                             top_n = NULL)
+```
+
+#### Aggregate results
+
+```{r}
+df_agg <- dplyr::group_by(all_targets, HPO_ID,Phenotype) |>
+  dplyr::summarise(n_genes=data.table::uniqueN(Gene),
+                   genes=list(unique(Gene)),
+                   n_celltypes=length(unique(CellType)),
+                   celltypes=list(unique(CellType))
+                   ) |>
+  dplyr::arrange(n_genes, celltypes) |>
+  data.table::data.table()   
+
+MultiEWCE::create_dt(df_agg)
+```
+
+## Aggregate results from Intellectual Disability phenotypes
+
+Subset phenotypes to those included in intellectual disability, 
+and are related to cognition.
+
+```{r}
+df_intel <- all_targets[disease_characteristic=="Intellectual disability" &
+                        (!Phenotype %in% c("Choreoathetosis","Coma")),]
+```
+
+### Top genes
+
+```{r} 
+top_genes <- sort(table(df_intel$Gene),
+                  decreasing = TRUE)
+print(top_genes)
+```
+
+### Top cell types
+
+```{r} 
+top_celltypes <- sort(table(unique(df_intel[,c("Phenotype","HPO_ID","CellType")])$CellType),
+         decreasing = TRUE)
+print(top_celltypes)
+```
+
+
+# Session info
+
+<details>
+```{r}
+utils::sessionInfo()
+```
+</details>
+<hr>
