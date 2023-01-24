@@ -9,8 +9,7 @@ output:
 # Install packages
 
 ```{r, warning=FALSE, message=FALSE}
-if(!require("remotes")) install.packages("remotes")
-if(!require("dplyr")) install.packages("dplyr")
+if(!require("remotes")) install.packages("remotes") 
 if(!require("MultiEWCE")) remotes::install_github("neurogenomics/MutltiEWCE")
 ```
 
@@ -44,14 +43,9 @@ all_targets <- MultiEWCE::prioritise_targets(results = results,
 #### Aggregate results
 
 ```{r}
-df_agg <- dplyr::group_by(all_targets, HPO_ID,Phenotype) |>
-  dplyr::summarise(n_genes=data.table::uniqueN(Gene),
-                   genes=list(unique(Gene)),
-                   n_celltypes=length(unique(CellType)),
-                   celltypes=list(unique(CellType))
-                   ) |>
-  dplyr::arrange(n_genes, celltypes) |>
-  data.table::data.table()   
+df_agg <- MultiEWCE::agg_results(phenos = all_targets,
+                                 count_var = "CellType", 
+                                 group_var = "Phenotype")
 
 MultiEWCE::create_dt(df_agg)
 ```

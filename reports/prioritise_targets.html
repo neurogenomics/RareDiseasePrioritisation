@@ -53596,15 +53596,14 @@ display: none;
 <h1 class="title toc-ignore">prioritise_targets</h1>
 <h4 class="author"><h4> ¶ Authors: ¶ </h4> ¶ Momoko Otani, Brian M.
 Schilder, Nathan G. Skene</h4>
-<h4 class="date"><h4> ¶ Updated: <i>Jan-18-2023</i> ¶ </h4></h4>
+<h4 class="date"><h4> ¶ Updated: <i>Jan-24-2023</i> ¶ </h4></h4>
 
 </div>
 
 
 <div id="install-packages" class="section level1">
 <h1>Install packages</h1>
-<pre class="r"><code>if(!require(&quot;remotes&quot;)) install.packages(&quot;remotes&quot;)
-if(!require(&quot;dplyr&quot;)) install.packages(&quot;dplyr&quot;)
+<pre class="r"><code>if(!require(&quot;remotes&quot;)) install.packages(&quot;remotes&quot;) 
 if(!require(&quot;MultiEWCE&quot;)) remotes::install_github(&quot;neurogenomics/MutltiEWCE&quot;)</code></pre>
 </div>
 <div id="prioritise-targets" class="section level1">
@@ -53668,30 +53667,32 @@ ctd &lt;- MultiEWCE::load_example_ctd()</code></pre>
 ##  - 0 genes</code></pre>
 <pre><code>## Filtering by gene size.</code></pre>
 <pre><code>## Converting phenos to GRanges.</code></pre>
-<pre><code>## Loading required namespace: EnsDb.Hsapiens.v75</code></pre>
+<pre><code>## Loading required namespace: ensembldb</code></pre>
 <pre><code>## Gathering gene metadata</code></pre>
+<pre><code>## Loading required namespace: EnsDb.Hsapiens.v75</code></pre>
 <pre><code>## 120 / 2,213 genes kept.</code></pre>
 <pre><code>## Filtering by specificity_quantile.</code></pre>
+<pre><code>## Filtering by mean_exp_quantile.</code></pre>
 <pre><code>## Prioritised targets: 
-##  - 389 results 
-##  - 11 phenotypes 
+##  - 224 results 
+##  - 9 phenotypes 
 ##  - 0 cell types 
 ##  - 0 associated diseases 
-##  - 120 genes</code></pre>
+##  - 70 genes</code></pre>
 <pre><code>## Prioritised targets: 
-##  - 453 results 
+##  - 335 results 
 ##  - 9 phenotypes 
-##  - 17 cell types 
+##  - 15 cell types 
 ##  - 39 associated diseases 
-##  - 27 genes</code></pre>
+##  - 24 genes</code></pre>
 <pre><code>## Sorting rows.</code></pre>
 <pre><code>## Finding top 3 gene targets per: HPO_ID, CellType</code></pre>
 <pre><code>## Prioritised targets: 
-##  - 96 results 
+##  - 80 results 
 ##  - 9 phenotypes 
-##  - 17 cell types 
+##  - 15 cell types 
 ##  - 17 associated diseases 
-##  - 22 genes</code></pre>
+##  - 21 genes</code></pre>
 </div>
 <div id="all-cell-type-phenotype-associations-that-met-criterion" class="section level3">
 <h3>All cell type-phenotype associations that met criterion</h3>
@@ -53748,41 +53749,38 @@ ctd &lt;- MultiEWCE::load_example_ctd()</code></pre>
 <pre><code>## Gathering gene metadata</code></pre>
 <pre><code>## 120 / 2,213 genes kept.</code></pre>
 <pre><code>## Filtering by specificity_quantile.</code></pre>
+<pre><code>## Filtering by mean_exp_quantile.</code></pre>
 <pre><code>## Prioritised targets: 
-##  - 389 results 
-##  - 11 phenotypes 
+##  - 224 results 
+##  - 9 phenotypes 
 ##  - 0 cell types 
 ##  - 0 associated diseases 
-##  - 120 genes</code></pre>
+##  - 70 genes</code></pre>
 <pre><code>## Prioritised targets: 
-##  - 453 results 
+##  - 335 results 
 ##  - 9 phenotypes 
-##  - 17 cell types 
+##  - 15 cell types 
 ##  - 39 associated diseases 
-##  - 27 genes</code></pre>
+##  - 24 genes</code></pre>
 <pre><code>## Sorting rows.</code></pre>
 <pre><code>## Prioritised targets: 
-##  - 453 results 
+##  - 335 results 
 ##  - 9 phenotypes 
-##  - 17 cell types 
+##  - 15 cell types 
 ##  - 39 associated diseases 
-##  - 27 genes</code></pre>
+##  - 24 genes</code></pre>
 <div id="aggregate-results" class="section level4">
 <h4>Aggregate results</h4>
-<pre class="r"><code>df_agg &lt;- dplyr::group_by(all_targets, HPO_ID,Phenotype) |&gt;
-  dplyr::summarise(n_genes=data.table::uniqueN(Gene),
-                   genes=list(unique(Gene)),
-                   n_celltypes=length(unique(CellType)),
-                   celltypes=list(unique(CellType))
-                   ) |&gt;
-  dplyr::arrange(n_genes, celltypes) |&gt;
-  data.table::data.table()   </code></pre>
-<pre><code>## `summarise()` has grouped output by &#39;HPO_ID&#39;. You can override using the
-## `.groups` argument.</code></pre>
+<pre class="r"><code>df_agg &lt;- MultiEWCE::agg_results(phenos = all_targets,
+                                 count_var = &quot;CellType&quot;, 
+                                 group_var = &quot;Phenotype&quot;)</code></pre>
+<pre><code>## Aggregating results by group_var=&#39;Phenotype&#39;</code></pre>
+<pre><code>## Adding HPO IDs.</code></pre>
+<pre><code>## Importing existing file: /Users/schilder/Library/Caches/org.R-project.R/R/HPOExplorer/data/phenotype_to_genes.txt</code></pre>
 <pre class="r"><code>MultiEWCE::create_dt(df_agg)</code></pre>
 <pre><code>## Loading required namespace: DT</code></pre>
-<div class="datatables html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-58b2bd7cebf0b2bc04c5" style="width:100%;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-58b2bd7cebf0b2bc04c5">{"x":{"filter":"none","vertical":false,"extensions":["Buttons"],"caption":"<caption><\/caption>","data":[["1","2","3","4","5","6","7","8","9"],["HP:0001266","HP:0002878","HP:0001256","HP:0001259","HP:0002376","HP:0011344","HP:0100806","HP:0001263","HP:0012758"],["Choreoathetosis","Respiratory failure","Intellectual disability, mild","Coma","Developmental regression","Severe global developmental delay","Sepsis","Global developmental delay","Neurodevelopmental delay"],[1,1,2,2,2,3,5,14,18],[["FOXG1"],["CCNO"],["PRRT2","POU3F4"],["INS","KCNJ11"],["FOXG1","PIGY"],["FOXG1","TUBB2A","PROP1"],["RMRP","IGHM","CD79B","HLA-B","CD79A"],["FOXG1","PIGY","SIX6","POU3F4","GPR88","PROP1","SNORD116-1","GSX2","SOX3","SOX2","TUBB2A","RTL1","MAGEL2","SNORD118"],["FOXG1","SIX6","PIGY","PROP1","SNORD116-1","FOXH1","POU3F4","GPR88","TUBB2A","SOX2","SOX3","SNORD118","GSX2","HOXA2","MAGEL2","SLC18A3","RAC3","RTL1"]],[1,1,2,1,3,4,1,12,13],[["Excitatory neurons"],["Ciliated epithelial cells"],["Ganglion cells","Inhibitory neurons"],["Islet endocrine cells"],["Inhibitory neurons","Excitatory neurons","Granule neurons"],["Excitatory neurons","Ganglion cells","Purkinje neurons","Inhibitory neurons"],["Antigen presenting cells"],["Excitatory neurons","Granule neurons","Amacrine cells","Inhibitory neurons","Purkinje neurons","Oligodendrocytes","Inhibitory interneurons","Ganglion cells","Horizontal cells","ENS glia","Astrocytes","Bipolar cells"],["Excitatory neurons","Amacrine cells","Granule neurons","Purkinje neurons","Limbic system neurons","Inhibitory neurons","Ganglion cells","Astrocytes","ENS glia","Oligodendrocytes","Inhibitory interneurons","Visceral neurons","Horizontal cells"]]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>HPO_ID<\/th>\n      <th>Phenotype<\/th>\n      <th>n_genes<\/th>\n      <th>genes<\/th>\n      <th>n_celltypes<\/th>\n      <th>celltypes<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"dom":"Bfrtip","buttons":["copy","csv","excel","pdf","print"],"scrollY":400,"scrollX":true,"scrollCollapse":true,"paging":false,"columnDefs":[{"className":"dt-center","targets":"_all"},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false},"selection":{"mode":"multiple","selected":null,"target":"row","selectable":null}},"evals":[],"jsHooks":[]}</script>
+<div class="datatables html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-e26ae6f79b9c99846b2b" style="width:100%;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-e26ae6f79b9c99846b2b">{"x":{"filter":"none","vertical":false,"extensions":["Buttons"],"caption":"<caption><\/caption>","data":[["1","2","3","4","5","6","7","8","9"],["Respiratory failure","Severe global developmental delay","Developmental regression","Intellectual disability, mild","Global developmental delay","Neurodevelopmental delay","Sepsis","Choreoathetosis","Coma"],[1,3,2,2,11,11,1,1,1],[1,3,2,2,13,16,4,1,2],["CCNO","FOXG1; TUBB2A; PROP1","FOXG1; PIGY","PRRT2; POU3F4","FOXG1; PIGY; SIX6; POU3F4; GPR88; PROP1; GSX2; SOX3; SOX2; TUBB2A; RTL1; SNORD116-1; SNORD118","FOXG1; SIX6; PIGY; PROP1; POU3F4; GPR88; TUBB2A; SOX2; SOX3; SNORD118; HOXA2; SNORD116-1; GSX2; SLC18A3; FOXH1; RTL1","RMRP; IGHM; CD79B; HLA-B","FOXG1","INS; KCNJ11"],[4.852,1.716,1.593,1.43,1.211,1.155,2.606,1.94,2.691],[0,0.022,0.002,0.004,0.007,0.01,0.003,0.012,0.023],[17.124,5.723,5.935,5.115,5.385,4.793,6.446,5.588,5.692],["Ciliated epithelial cells","Excitatory neurons; Ganglion cells; Purkinje neurons","Excitatory neurons; Granule neurons","Ganglion cells; Inhibitory neurons","Excitatory neurons; Granule neurons; Amacrine cells; Inhibitory neurons;\nPurkinje neurons; Oligodendrocytes; Ganglion cells; Horizontal cells; ENS glia;\nAstrocytes; Bipolar cells","Excitatory neurons; Amacrine cells; Granule neurons; Purkinje neurons;\nInhibitory neurons; Ganglion cells; Astrocytes; ENS glia; Oligodendrocytes;\nVisceral neurons; Horizontal cells","Antigen presenting cells","Excitatory neurons","Islet endocrine cells"],["HP:0002878","HP:0011344","HP:0002376","HP:0001256","HP:0001263","HP:0012758","HP:0100806","HP:0001266","HP:0001259"],[true,true,true,true,true,true,true,true,true]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>Phenotype<\/th>\n      <th>n_celltype<\/th>\n      <th>n_genes<\/th>\n      <th>genes<\/th>\n      <th>mean_fold_change<\/th>\n      <th>mean_q<\/th>\n      <th>mean_sd_from_mean<\/th>\n      <th>celltype<\/th>\n      <th>HPO_ID<\/th>\n      <th>HPO_term_valid<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"dom":"Bfrtip","buttons":["copy","csv","excel","pdf","print"],"scrollY":400,"scrollX":true,"scrollCollapse":true,"paging":false,"columnDefs":[{"className":"dt-center","targets":"_all"},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false},"selection":{"mode":"multiple","selected":null,"target":"row","selectable":null}},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 </div>
@@ -53798,12 +53796,12 @@ are related to cognition.</p>
                   decreasing = TRUE)
 print(top_genes)</code></pre>
 <pre><code>## 
-## SNORD116-1      FOXG1     POU3F4       SOX3       GSX2       SIX6       SOX2 
-##         56         54         43         43         42         41         28 
-##       PIGY     TUBB2A      PROP1      GPR88     MAGEL2       RTL1   SNORD118 
-##         23         19         18         15         14         14         14 
-##      FOXH1      HOXA2      PRRT2       RAC3    SLC18A3 
-##          3          1          1          1          1</code></pre>
+##       SOX3       SIX6     POU3F4       GSX2       SOX2      FOXG1       PIGY 
+##         42         41         29         28         28         27         23 
+##     TUBB2A      PROP1      GPR88       RTL1 SNORD116-1   SNORD118      FOXH1 
+##         19         18         14         14         14         14          1 
+##      HOXA2      PRRT2    SLC18A3 
+##          1          1          1</code></pre>
 </div>
 <div id="top-cell-types" class="section level3">
 <h3>Top cell types</h3>
@@ -53811,16 +53809,12 @@ print(top_genes)</code></pre>
          decreasing = TRUE)
 print(top_celltypes)</code></pre>
 <pre><code>## 
-##      Inhibitory neurons      Excitatory neurons          Ganglion cells 
-##                       5                       4                       4 
-##         Granule neurons        Purkinje neurons          Amacrine cells 
-##                       3                       3                       2 
-##              Astrocytes                ENS glia        Horizontal cells 
-##                       2                       2                       2 
-## Inhibitory interneurons        Oligodendrocytes           Bipolar cells 
-##                       2                       2                       1 
-##   Limbic system neurons        Visceral neurons 
-##                       1                       1</code></pre>
+## Excitatory neurons     Ganglion cells    Granule neurons Inhibitory neurons 
+##                  4                  4                  3                  3 
+##   Purkinje neurons     Amacrine cells         Astrocytes           ENS glia 
+##                  3                  2                  2                  2 
+##   Horizontal cells   Oligodendrocytes      Bipolar cells   Visceral neurons 
+##                  2                  2                  1                  1</code></pre>
 </div>
 </div>
 </div>
@@ -53843,7 +53837,7 @@ print(top_celltypes)</code></pre>
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-## [1] MultiEWCE_0.1.2 dplyr_1.0.10    remotes_2.4.2  
+## [1] MultiEWCE_0.1.3 remotes_2.4.2  
 ## 
 ## loaded via a namespace (and not attached):
 ##   [1] backports_1.4.1               AnnotationHub_3.6.0          
@@ -53854,79 +53848,80 @@ print(top_celltypes)</code></pre>
 ##  [11] ggnetwork_0.5.10              ggplot2_3.4.0                
 ##  [13] digest_0.6.31                 ensembldb_2.22.0             
 ##  [15] yulab.utils_0.0.6             htmltools_0.5.4              
-##  [17] RNOmni_1.0.1                  fansi_1.0.3                  
+##  [17] RNOmni_1.0.1                  fansi_1.0.4                  
 ##  [19] magrittr_2.0.3                memoise_2.0.1                
 ##  [21] ontologyPlot_1.6              limma_3.54.0                 
 ##  [23] Biostrings_2.66.0             matrixStats_0.63.0           
 ##  [25] R.utils_2.12.2                prettyunits_1.1.1            
-##  [27] colorspace_2.0-3              blob_1.2.3                   
+##  [27] colorspace_2.1-0              blob_1.2.3                   
 ##  [29] rappdirs_0.3.3                xfun_0.36                    
-##  [31] crayon_1.5.2                  RCurl_1.98-1.9               
-##  [33] jsonlite_1.8.4                graph_1.76.0                 
-##  [35] ape_5.6-2                     glue_1.6.2                   
-##  [37] gtable_0.3.1                  zlibbioc_1.44.0              
-##  [39] XVector_0.38.0                HGNChelper_0.8.1             
-##  [41] DelayedArray_0.24.0           car_3.1-1                    
-##  [43] Rgraphviz_2.42.0              SingleCellExperiment_1.20.0  
-##  [45] BiocGenerics_0.44.0           abind_1.4-5                  
-##  [47] scales_1.2.1                  DBI_1.1.3                    
-##  [49] rstatix_0.7.1                 Rcpp_1.0.9                   
-##  [51] progress_1.2.2                viridisLite_0.4.1            
-##  [53] xtable_1.8-4                  gridGraphics_0.5-1           
-##  [55] tidytree_0.4.2                bit_4.0.5                    
-##  [57] DT_0.27                       stats4_4.2.1                 
-##  [59] htmlwidgets_1.6.1             httr_1.4.4                   
-##  [61] ontologyIndex_2.10            HPOExplorer_0.99.2           
-##  [63] ellipsis_0.3.2                XML_3.99-0.13                
-##  [65] R.methodsS3_1.8.2             pkgconfig_2.0.3              
-##  [67] sass_0.4.4                    dbplyr_2.3.0                 
-##  [69] utf8_1.2.2                    ggplotify_0.1.0              
-##  [71] tidyselect_1.2.0              rlang_1.0.6                  
-##  [73] reshape2_1.4.4                later_1.3.0                  
-##  [75] AnnotationDbi_1.60.0          munsell_0.5.0                
-##  [77] BiocVersion_3.16.0            tools_4.2.1                  
-##  [79] cachem_1.0.6                  cli_3.6.0                    
-##  [81] generics_0.1.3                RSQLite_2.2.20               
-##  [83] ExperimentHub_2.6.0           statnet.common_4.7.0         
-##  [85] broom_1.0.2                   evaluate_0.20                
-##  [87] stringr_1.5.0                 fastmap_1.1.0                
-##  [89] EnsDb.Hsapiens.v75_2.99.0     yaml_2.3.6                   
-##  [91] ggtree_3.6.2                  babelgene_22.9               
-##  [93] knitr_1.41                    bit64_4.0.5                  
-##  [95] purrr_1.0.1                   AnnotationFilter_1.22.0      
-##  [97] KEGGREST_1.38.0               gprofiler2_0.2.1             
-##  [99] nlme_3.1-161                  mime_0.12                    
-## [101] R.oo_1.25.0                   grr_0.9.5                    
-## [103] aplot_0.1.9                   xml2_1.3.3                   
-## [105] biomaRt_2.54.0                compiler_4.2.1               
-## [107] rstudioapi_0.14               plotly_4.10.1                
-## [109] filelock_1.0.2                curl_5.0.0                   
-## [111] png_0.1-8                     interactiveDisplayBase_1.36.0
-## [113] ggsignif_0.6.4                treeio_1.22.0                
-## [115] paintmap_1.0                  tibble_3.1.8                 
-## [117] EWCE_1.6.0                    bslib_0.4.2                  
-## [119] homologene_1.4.68.19.3.27     stringi_1.7.12               
-## [121] GenomicFeatures_1.50.3        lattice_0.20-45              
-## [123] ProtGenerics_1.30.0           Matrix_1.5-3                 
-## [125] vctrs_0.5.1                   pillar_1.8.1                 
-## [127] lifecycle_1.0.3               BiocManager_1.30.19          
-## [129] jquerylib_0.1.4               data.table_1.14.6            
-## [131] bitops_1.0-7                  rtracklayer_1.58.0           
-## [133] httpuv_1.6.8                  patchwork_1.1.2              
-## [135] GenomicRanges_1.50.2          BiocIO_1.8.0                 
-## [137] R6_2.5.1                      promises_1.2.0.1             
-## [139] network_1.18.0                IRanges_2.32.0               
-## [141] codetools_0.2-18              assertthat_0.2.1             
-## [143] SummarizedExperiment_1.28.0   rjson_0.2.21                 
-## [145] GenomicAlignments_1.34.0      Rsamtools_2.14.0             
-## [147] S4Vectors_0.36.1              GenomeInfoDbData_1.2.9       
-## [149] hms_1.1.2                     parallel_4.2.1               
-## [151] grid_4.2.1                    ggfun_0.0.9                  
-## [153] tidyr_1.2.1                   coda_0.19-4                  
-## [155] rmarkdown_2.19                MatrixGenerics_1.10.0        
-## [157] carData_3.0-5                 ggpubr_0.5.0                 
-## [159] piggyback_0.1.4               Biobase_2.58.0               
-## [161] shiny_1.7.4                   restfulr_0.0.15</code></pre>
+##  [31] dplyr_1.0.10                  crayon_1.5.2                 
+##  [33] RCurl_1.98-1.9                jsonlite_1.8.4               
+##  [35] graph_1.76.0                  ape_5.6-2                    
+##  [37] glue_1.6.2                    gtable_0.3.1                 
+##  [39] zlibbioc_1.44.0               XVector_0.38.0               
+##  [41] HGNChelper_0.8.1              DelayedArray_0.24.0          
+##  [43] car_3.1-1                     Rgraphviz_2.42.0             
+##  [45] SingleCellExperiment_1.20.0   BiocGenerics_0.44.0          
+##  [47] abind_1.4-5                   scales_1.2.1                 
+##  [49] DBI_1.1.3                     rstatix_0.7.1                
+##  [51] Rcpp_1.0.10                   progress_1.2.2               
+##  [53] viridisLite_0.4.1             xtable_1.8-4                 
+##  [55] gridGraphics_0.5-1            tidytree_0.4.2               
+##  [57] bit_4.0.5                     DT_0.27                      
+##  [59] stats4_4.2.1                  htmlwidgets_1.6.1            
+##  [61] httr_1.4.4                    ontologyIndex_2.10           
+##  [63] HPOExplorer_0.99.2            ellipsis_0.3.2               
+##  [65] XML_3.99-0.13                 R.methodsS3_1.8.2            
+##  [67] pkgconfig_2.0.3               sass_0.4.4                   
+##  [69] dbplyr_2.3.0                  utf8_1.2.2                   
+##  [71] ggplotify_0.1.0               tidyselect_1.2.0             
+##  [73] rlang_1.0.6                   reshape2_1.4.4               
+##  [75] later_1.3.0                   AnnotationDbi_1.60.0         
+##  [77] munsell_0.5.0                 BiocVersion_3.16.0           
+##  [79] tools_4.2.1                   cachem_1.0.6                 
+##  [81] cli_3.6.0                     generics_0.1.3               
+##  [83] RSQLite_2.2.20                ExperimentHub_2.6.0          
+##  [85] statnet.common_4.7.0          broom_1.0.2                  
+##  [87] evaluate_0.20                 stringr_1.5.0                
+##  [89] fastmap_1.1.0                 EnsDb.Hsapiens.v75_2.99.0    
+##  [91] yaml_2.3.7                    ggtree_3.6.2                 
+##  [93] babelgene_22.9                knitr_1.41                   
+##  [95] bit64_4.0.5                   purrr_1.0.1                  
+##  [97] AnnotationFilter_1.22.0       KEGGREST_1.38.0              
+##  [99] gprofiler2_0.2.1              nlme_3.1-161                 
+## [101] mime_0.12                     R.oo_1.25.0                  
+## [103] grr_0.9.5                     aplot_0.1.9                  
+## [105] xml2_1.3.3                    biomaRt_2.54.0               
+## [107] compiler_4.2.1                rstudioapi_0.14              
+## [109] plotly_4.10.1                 filelock_1.0.2               
+## [111] curl_5.0.0                    png_0.1-8                    
+## [113] interactiveDisplayBase_1.36.0 ggsignif_0.6.4               
+## [115] treeio_1.22.0                 paintmap_1.0                 
+## [117] tibble_3.1.8                  EWCE_1.6.0                   
+## [119] bslib_0.4.2                   homologene_1.4.68.19.3.27    
+## [121] stringi_1.7.12                GenomicFeatures_1.50.3       
+## [123] lattice_0.20-45               ProtGenerics_1.30.0          
+## [125] Matrix_1.5-3                  vctrs_0.5.2                  
+## [127] pillar_1.8.1                  lifecycle_1.0.3              
+## [129] BiocManager_1.30.19           jquerylib_0.1.4              
+## [131] data.table_1.14.6             bitops_1.0-7                 
+## [133] rtracklayer_1.58.0            httpuv_1.6.8                 
+## [135] patchwork_1.1.2               GenomicRanges_1.50.2         
+## [137] BiocIO_1.8.0                  R6_2.5.1                     
+## [139] promises_1.2.0.1              network_1.18.0               
+## [141] IRanges_2.32.0                codetools_0.2-18             
+## [143] assertthat_0.2.1              SummarizedExperiment_1.28.0  
+## [145] rjson_0.2.21                  GenomicAlignments_1.34.0     
+## [147] Rsamtools_2.14.0              S4Vectors_0.36.1             
+## [149] GenomeInfoDbData_1.2.9        hms_1.1.2                    
+## [151] parallel_4.2.1                grid_4.2.1                   
+## [153] ggfun_0.0.9                   tidyr_1.2.1                  
+## [155] coda_0.19-4                   rmarkdown_2.20               
+## [157] MatrixGenerics_1.10.0         carData_3.0-5                
+## [159] ggpubr_0.5.0                  piggyback_0.1.4              
+## [161] Biobase_2.58.0                shiny_1.7.4                  
+## [163] restfulr_0.0.15</code></pre>
 </details>
 <hr>
 </div>
