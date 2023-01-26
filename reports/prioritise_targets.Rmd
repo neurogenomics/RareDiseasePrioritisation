@@ -119,6 +119,34 @@ htmltools::includeHTML("https://github.com/neurogenomics/RareDiseasePrioritisati
 
 [Full screen version](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/all_targets_network.html)
 
+## Aggregate results
+
+```{r}
+all_agg <- MultiEWCE::agg_results(phenos = all_targets,
+                                  count_var = "CellType", 
+                                  group_var = "Phenotype")
+
+MultiEWCE::create_dt(all_agg) 
+```
+### Top cell types
+
+Get the cell types that were enriched in the greatest number of unique phenotypes.
+
+```{r}
+head(sort(table(unique(all_targets[,c("Phenotype","CellType")])$CellType), 
+          decreasing = TRUE))
+```
+
+### Top genes
+
+Get the genes that were enriched in the greatest number of unique phenotypes.
+
+```{r}
+head(sort(table(unique(all_targets[,c("Phenotype","Gene")])$Gene), 
+          decreasing = TRUE))
+```
+
+
 # Session info
 
 <details>
