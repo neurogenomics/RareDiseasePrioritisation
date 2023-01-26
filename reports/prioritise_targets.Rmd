@@ -25,39 +25,51 @@ ctd <- MultiEWCE::load_example_ctd()
 
 ## Run filtering/sorting procedure
 
-### Top 3 targets per cell type-phenotype association
+### Top targets per cell type-phenotype association
 
 ```{r} 
 top_targets <- MultiEWCE::prioritise_targets(results = results,
-                                             ctd = ctd,
-                                             top_n = 3)
+                                             ctd = ctd)
 ```
 
-### All  cell type-phenotype associations that met criterion
+## Plot network
 
-```{r}
-all_targets <- MultiEWCE::prioritise_targets(results = results,
-                                             ctd = ctd, 
-                                             top_n = NULL)
+Generate a network from the top phenotype-celltype-gene associations.
+
+```{r, fig.height=12, results='asis'}
+vn_top <- MultiEWCE::prioritise_targets_network(top_targets = top_targets, 
+                                                 save_path = here::here("reports",
+                                                            "top_targets_network.html"),
+                                                layout = "layout_with_mds",
+                                                show_plot = FALSE)
+# visNetwork::renderVisNetwork(vn_top$plot)
 ```
 
-#### Aggregate results
+```{r, results='asis'}
+htmltools::includeHTML("https://github.com/neurogenomics/RareDiseasePrioritisation/raw/master/reports/top_targets_network.html")
+```
+
+
+[Full screen version](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/top_targets_network.html)
+
+
+## Aggregate results
 
 ```{r}
-df_agg <- MultiEWCE::agg_results(phenos = all_targets,
+df_agg <- MultiEWCE::agg_results(phenos = top_targets,
                                  count_var = "CellType", 
                                  group_var = "Phenotype")
 
 MultiEWCE::create_dt(df_agg)
 ```
 
-## Aggregate results from Intellectual Disability phenotypes
+### Aggregate results from Intellectual Disability phenotypes
 
 Subset phenotypes to those included in intellectual disability, 
 and are related to cognition.
 
 ```{r}
-df_intel <- all_targets[disease_characteristic=="Intellectual disability" &
+df_intel <- top_targets[disease_characteristic=="Intellectual disability" &
                         (!Phenotype %in% c("Choreoathetosis","Coma")),]
 ```
 
@@ -77,24 +89,35 @@ top_celltypes <- sort(table(unique(df_intel[,c("Phenotype","HPO_ID","CellType")]
 print(top_celltypes)
 ```
 
-# Plot targets
+# Prioritise targets: extended
 
-## Network
+Now let's lift some of the filters on phenotypes and cell types
+to recover a more extensive network.
 
-Generate a network from the top phenotype-celltype-gene associations.
+## Run filtering/sorting procedure
 
-```{r, fig.height=12, results='asis'}
-vn <- MultiEWCE::prioritise_targets_network(top_targets = top_targets, 
-                                            save_path = "targets_network.html",
-                                            show_plot = FALSE)
-# visNetwork::renderVisNetwork(vn$plot)
+```{r}
+all_targets <- MultiEWCE::prioritise_targets(results = results,
+                                             ctd = ctd,
+                                             # keep_celltypes = NULL, 
+                                             # keep_onsets = NULL,
+                                             keep_tiers = NULL)
+```
+
+## Plot network
+
+```{r} 
+vn_all <- MultiEWCE::prioritise_targets_network(top_targets = all_targets, 
+                                                save_path = here::here("reports",
+                                                            "all_targets_network.html"), 
+                                                show_plot = FALSE)
 ```
 
 ```{r, results='asis'}
-htmltools::includeHTML("https://github.com/neurogenomics/RareDiseasePrioritisation/raw/master/reports/targets_network.html")
+htmltools::includeHTML("https://github.com/neurogenomics/RareDiseasePrioritisation/raw/master/reports/all_targets_network.html")
 ```
 
-
+[Full screen version](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/all_targets_network.html)
 
 # Session info
 
