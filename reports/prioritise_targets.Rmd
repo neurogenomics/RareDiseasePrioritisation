@@ -4,6 +4,7 @@ author: "<h4>Authors:</h4> Momoko Otani, Brian M. Schilder, Nathan G. Skene"
 date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
 output:
   html_document
+runtime: shiny
 ---
 
 # Install packages
@@ -74,6 +75,18 @@ print(top_genes)
 top_celltypes <- sort(table(unique(df_intel[,c("Phenotype","HPO_ID","CellType")])$CellType),
          decreasing = TRUE)
 print(top_celltypes)
+```
+
+# Plot targets
+
+## Network
+
+Generate a network from the top phenotype-celltype-gene associations.
+
+```{r, fig.height=12}
+vn <- MultiEWCE::prioritise_targets_network(top_targets = top_targets, 
+                                            show_plot = FALSE)
+visNetwork::renderVisNetwork(vn$plot)
 ```
 
 
