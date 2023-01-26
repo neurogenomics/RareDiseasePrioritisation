@@ -85,6 +85,7 @@ Generate a network from the top phenotype-celltype-gene associations.
 
 ```{r, fig.height=12}
 vn <- MultiEWCE::prioritise_targets_network(top_targets = top_targets, 
+                                            save_path = "targets_network.html",
                                             show_plot = FALSE)
 visNetwork::renderVisNetwork(vn$plot)
 ```
