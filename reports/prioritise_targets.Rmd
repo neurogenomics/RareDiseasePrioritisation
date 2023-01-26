@@ -9,8 +9,9 @@ output:
 # Install packages
 
 ```{r, warning=FALSE, message=FALSE}
+if(!require("htmltools")) install.packages("htmltools") 
 if(!require("remotes")) install.packages("remotes") 
-if(!require("MultiEWCE")) remotes::install_github("neurogenomics/MutltiEWCE")
+if(!require("MultiEWCE")) remotes::install_github("neurogenomics/MutltiEWCE", dependencies = TRUE)
 ```
 
 # Prioritise targets
@@ -86,7 +87,7 @@ Generate a network from the top phenotype-celltype-gene associations.
 vn <- MultiEWCE::prioritise_targets_network(top_targets = top_targets, 
                                             save_path = "targets_network.html",
                                             show_plot = FALSE)
-visNetwork::renderVisNetwork(vn$plot)
+# visNetwork::renderVisNetwork(vn$plot)
 ```
 
 ```{r, results='asis'}
