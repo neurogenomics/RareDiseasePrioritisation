@@ -17,3 +17,5 @@ Thesis project by Momoko Otani, supervised by Nathan Skene and Brian Schilder.
 ## Rmarkdown reports
 
 ### [Prioritise targets](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/prioritise_targets)
+#### [Reduced network](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/top_targets_network.html)
+#### [Extended network](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/all_targets_network.html)
