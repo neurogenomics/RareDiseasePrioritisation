@@ -16,21 +16,30 @@ if(!require("MultiEWCE")) remotes::install_github("neurogenomics/MutltiEWCE", de
 
 # Prioritise targets
 
-## Gather data
-
-```{r}
-results <- MultiEWCE::load_example_results()
-ctd <- MultiEWCE::load_example_ctd()
-```
-
-## Run filtering/sorting procedure
-
-### Top targets per cell type-phenotype association
+## Filter & sort
 
 ```{r} 
-top_targets <- MultiEWCE::prioritise_targets(results = results,
-                                             ctd = ctd)
+res <- MultiEWCE::prioritise_targets()
 ```
+
+
+### Top targets 
+
+Here are the top gene targets based on the default filtering/sorting criterion of `prioritise_targets`.
+
+```{r}
+MultiEWCE::create_dt(res$top_targets)
+```
+
+### Filtering report 
+
+Here is a report that shows how many phenotypes/celltypes/genes remained
+after each step within the `prioritise_targets` pipeline.
+
+```{r}
+MultiEWCE::create_dt(res$report)
+```
+
 
 ## Plot network
 
@@ -39,8 +48,7 @@ Generate a network from the top phenotype-celltype-gene associations.
 ```{r, fig.height=20, results='asis'}
 vn_top <- MultiEWCE::prioritise_targets_network(top_targets = top_targets, 
                                                  save_path = here::here("reports",
-                                                            "top_targets_network.html"),
-                                                layout = "layout_with_mds",
+                                                            "top_targets_network.html"), 
                                                 show_plot = FALSE)
 # visNetwork::renderVisNetwork(vn_top$plot)
 ```
@@ -63,7 +71,7 @@ df_agg <- MultiEWCE::agg_results(phenos = top_targets,
 MultiEWCE::create_dt(df_agg)
 ```
 
-### Aggregate results from Intellectual Disability phenotypes
+### Aggregate results
 
 Subset phenotypes to those included in intellectual disability, 
 and are related to cognition.
@@ -94,23 +102,27 @@ print(top_celltypes)
 Now let's lift some of the filters on phenotypes and cell types
 to recover a more extensive network.
 
-## Run filtering/sorting procedure
+## Filter & sort
 
 ```{r}
-all_targets <- MultiEWCE::prioritise_targets(results = results,
-                                             ctd = ctd,
-                                             # keep_celltypes = NULL, 
-                                             keep_onsets = NULL,
-                                             keep_tiers = NULL, 
-                                             severity_threshold = NULL)
+res_all <- MultiEWCE::prioritise_targets(keep_onsets = NULL,
+                                         keep_tiers = NULL,
+                                         pheno_frequency_threshold = c(10,NA),
+                                         gene_frequency_threshold = c(10,NA),
+                                         severity_threshold = NULL,
+                                         keep_specificity_quantiles = seq(30,40),
+                                         keep_mean_exp_quantiles = seq(30,40))
 ```
 
 ## Plot network
 
+Note that we set `physics=FALSE` to reduce the computation that it takes to render the plot.
+
 ```{r, fig.height=20} 
-vn_all <- MultiEWCE::prioritise_targets_network(top_targets = all_targets, 
+vn_all <- MultiEWCE::prioritise_targets_network(top_targets = res_all$top_targets, 
                                                 save_path = here::here("reports",
                                                             "all_targets_network.html"), 
+                                                physics = FALSE,  
                                                 show_plot = FALSE)
 ```
 
@@ -123,7 +135,7 @@ htmltools::includeHTML("https://github.com/neurogenomics/RareDiseasePrioritisati
 ## Aggregate results
 
 ```{r}
-all_agg <- MultiEWCE::agg_results(phenos = all_targets,
+all_agg <- MultiEWCE::agg_results(phenos = res_all$top_targets,
                                   count_var = "CellType", 
                                   group_var = "Phenotype")
 
@@ -136,12 +148,12 @@ Get the phenotypes that were enriched in the greatest number of cell types.
 
 ```{r}
 #### All ontology level ####
-head(sort(table(unique(all_targets[,c("Phenotype","CellType")])$Phenotype), 
+head(sort(table(unique(res_all$top_targets[,c("Phenotype","CellType")])$Phenotype), 
           decreasing = TRUE))
 
 #### Only lower ontology levels #####
-all_targets <- HPOExplorer::add_ont_lvl(all_targets)
-head(sort(table(unique(all_targets[ontLvl<=4,c("Phenotype","CellType")])$Phenotype), 
+all_targets <- HPOExplorer::add_ont_lvl(res_all$top_targets)
+head(sort(table(unique(res_all$top_targets[ontLvl<=4,c("Phenotype","CellType")])$Phenotype), 
           decreasing = TRUE))
 ```
 
@@ -151,7 +163,7 @@ head(sort(table(unique(all_targets[ontLvl<=4,c("Phenotype","CellType")])$Phenoty
 Get the cell types that were enriched in the greatest number of unique phenotypes.
 
 ```{r}
-head(sort(table(unique(all_targets[,c("Phenotype","CellType")])$CellType), 
+head(sort(table(unique(res_all$top_targets[,c("Phenotype","CellType")])$CellType), 
           decreasing = TRUE))
 ```
 
@@ -160,14 +172,16 @@ head(sort(table(unique(all_targets[,c("Phenotype","CellType")])$CellType),
 Get the genes that were enriched in the greatest number of unique phenotypes.
 
 ```{r}
-head(sort(table(unique(all_targets[,c("Phenotype","Gene")])$Gene), 
+head(sort(table(unique(res_all$top_targets[,c("Phenotype","Gene")])$Gene), 
           decreasing = TRUE))
 ```
 
-# Most common ancestors
+### Top ancestors
+
+Get the most common ancestors in the results.
 
 ```{r}
-ancestor_freq <- sort(table(all_targets$ancestor), decreasing = TRUE) |>
+ancestor_freq <- sort(table(res_all$top_targets$ancestor), decreasing = TRUE) |>
     data.table::data.table() |> 
     `colnames<-`(c("HPO_ID","freq"))
 ancestor_freq$Phenotype <- HPOExplorer::harmonise_phenotypes(phenotypes = ancestor_freq$HPO_ID)
