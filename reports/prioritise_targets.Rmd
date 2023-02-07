@@ -36,7 +36,7 @@ top_targets <- MultiEWCE::prioritise_targets(results = results,
 
 Generate a network from the top phenotype-celltype-gene associations.
 
-```{r, fig.height=12, results='asis'}
+```{r, fig.height=20, results='asis'}
 vn_top <- MultiEWCE::prioritise_targets_network(top_targets = top_targets, 
                                                  save_path = here::here("reports",
                                                             "top_targets_network.html"),
@@ -50,7 +50,7 @@ htmltools::includeHTML("https://github.com/neurogenomics/RareDiseasePrioritisati
 ```
 
 
-[Full screen version](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/top_targets_network.html)
+### [Full screen version](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/top_targets_network.html)
 
 
 ## Aggregate results
@@ -107,7 +107,7 @@ all_targets <- MultiEWCE::prioritise_targets(results = results,
 
 ## Plot network
 
-```{r} 
+```{r, fig.height=20} 
 vn_all <- MultiEWCE::prioritise_targets_network(top_targets = all_targets, 
                                                 save_path = here::here("reports",
                                                             "all_targets_network.html"), 
@@ -118,7 +118,7 @@ vn_all <- MultiEWCE::prioritise_targets_network(top_targets = all_targets,
 htmltools::includeHTML("https://github.com/neurogenomics/RareDiseasePrioritisation/raw/master/reports/all_targets_network.html")
 ```
 
-[Full screen version](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/all_targets_network.html)
+### [Full screen version](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/all_targets_network.html)
 
 ## Aggregate results
 
