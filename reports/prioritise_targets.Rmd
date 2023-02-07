@@ -46,7 +46,7 @@ MultiEWCE::create_dt(res$report)
 Generate a network from the top phenotype-celltype-gene associations.
 
 ```{r, fig.height=20, results='asis'}
-vn_top <- MultiEWCE::prioritise_targets_network(top_targets = top_targets, 
+vn_top <- MultiEWCE::prioritise_targets_network(top_targets = res$top_targets, 
                                                  save_path = here::here("reports",
                                                             "top_targets_network.html"), 
                                                 show_plot = FALSE)
@@ -64,7 +64,7 @@ htmltools::includeHTML("https://github.com/neurogenomics/RareDiseasePrioritisati
 ## Aggregate results
 
 ```{r}
-df_agg <- MultiEWCE::agg_results(phenos = top_targets,
+df_agg <- MultiEWCE::agg_results(phenos = res$top_targets,
                                  count_var = "CellType", 
                                  group_var = "Phenotype")
 
@@ -77,8 +77,9 @@ Subset phenotypes to those included in intellectual disability,
 and are related to cognition.
 
 ```{r}
-df_intel <- top_targets[disease_characteristic=="Intellectual disability" &
-                        (!Phenotype %in% c("Choreoathetosis","Coma")),]
+df_intel <- res$top_targets[
+    disease_characteristic=="Intellectual disability" &
+    (!Phenotype %in% c("Choreoathetosis","Coma")),]
 ```
 
 ### Top genes
