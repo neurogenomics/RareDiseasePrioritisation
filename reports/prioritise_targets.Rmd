@@ -100,8 +100,9 @@ to recover a more extensive network.
 all_targets <- MultiEWCE::prioritise_targets(results = results,
                                              ctd = ctd,
                                              # keep_celltypes = NULL, 
-                                             # keep_onsets = NULL,
-                                             keep_tiers = NULL)
+                                             keep_onsets = NULL,
+                                             keep_tiers = NULL, 
+                                             severity_threshold = NULL)
 ```
 
 ## Plot network
@@ -128,6 +129,23 @@ all_agg <- MultiEWCE::agg_results(phenos = all_targets,
 
 MultiEWCE::create_dt(all_agg) 
 ```
+
+### Top phenotypes
+
+Get the phenotypes that were enriched in the greatest number of cell types.
+
+```{r}
+#### All ontology level ####
+head(sort(table(unique(all_targets[,c("Phenotype","CellType")])$Phenotype), 
+          decreasing = TRUE))
+
+#### Only lower ontology levels #####
+all_targets <- HPOExplorer::add_ont_lvl(all_targets)
+head(sort(table(unique(all_targets[ontLvl<=4,c("Phenotype","CellType")])$Phenotype), 
+          decreasing = TRUE))
+```
+
+
 ### Top cell types
 
 Get the cell types that were enriched in the greatest number of unique phenotypes.
@@ -144,6 +162,17 @@ Get the genes that were enriched in the greatest number of unique phenotypes.
 ```{r}
 head(sort(table(unique(all_targets[,c("Phenotype","Gene")])$Gene), 
           decreasing = TRUE))
+```
+
+# Most common ancestors
+
+```{r}
+ancestor_freq <- sort(table(all_targets$ancestor), decreasing = TRUE) |>
+    data.table::data.table() |> 
+    `colnames<-`(c("HPO_ID","freq"))
+ancestor_freq$Phenotype <- HPOExplorer::harmonise_phenotypes(phenotypes = ancestor_freq$HPO_ID)
+
+MultiEWCE::create_dt(ancestor_freq) 
 ```
 
 
