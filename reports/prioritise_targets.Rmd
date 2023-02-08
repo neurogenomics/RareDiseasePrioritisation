@@ -64,9 +64,17 @@ htmltools::includeHTML("https://github.com/neurogenomics/RareDiseasePrioritisati
 ## Aggregate results
 
 ```{r}
-df_agg <- MultiEWCE::agg_results(phenos = res$top_targets,
-                                 count_var = "CellType", 
-                                 group_var = c("Phenotype","ancestor_name"))
+df_agg <- MultiEWCE::agg_results(
+    phenos = res$top_targets,
+    count_var = "CellType", 
+    group_var = c("Phenotype","ontLvl",
+                  "tier","tier_auto",
+                  "ancestor","ancestor_name",
+                  "disease_characteristic","DiseaseNames",
+                  "Onset","Onset_earliest","Onset_score_mean","Onset_score_min",
+                  "pheno_freq_mean","pheno_freq_min",
+                  "Severity_score_mean","Severity_score_min")
+    )
 
 MultiEWCE::create_dt(df_agg)
 ```
@@ -77,9 +85,13 @@ Subset phenotypes to those included in intellectual disability,
 and are related to cognition.
 
 ```{r}
-df_intel <- res$top_targets[
-    disease_characteristic=="Intellectual disability" &
-    (!Phenotype %in% c("Choreoathetosis","Coma")),]
+
+df_intel <- HPOExplorer::add_ancestor(
+    phenos = res$top_targets[ancestor_name=="Abnormality of the nervous system",][,-c("ancestor","ancestor_name")],
+                                      lvl = 5)
+df_intel <- df_intel[
+    ancestor_name %in% c("Neurodevelopmental abnormality"),]
+sort(unique(df_intel$Phenotype))
 ```
 
 ### Top genes
@@ -108,11 +120,11 @@ to recover a more extensive network.
 ```{r}
 res_all <- MultiEWCE::prioritise_targets(keep_onsets = NULL,
                                          keep_tiers = NULL,
+                                         severity_threshold = NULL,
                                          pheno_frequency_threshold = c(10,NA),
                                          gene_frequency_threshold = c(10,NA),
-                                         severity_threshold = NULL,
-                                         keep_specificity_quantiles = seq(30,40),
-                                         keep_mean_exp_quantiles = seq(30,40))
+                                         keep_specificity_quantiles = seq(20,40),
+                                         keep_mean_exp_quantiles = seq(20,40))
 ```
 
 ## Plot network
@@ -189,6 +201,39 @@ ancestor_freq$Phenotype <- HPOExplorer::harmonise_phenotypes(phenotypes = ancest
 
 MultiEWCE::create_dt(ancestor_freq) 
 ```
+
+# Manual queries
+
+Get all results. 
+
+```{r}
+res_all <- MultiEWCE::prioritise_targets(keep_onsets = NULL,
+                                         keep_tiers = NULL,
+                                         severity_threshold = NULL,
+                                         pheno_frequency_threshold = NULL,
+                                         gene_frequency_threshold = NULL,
+                                         keep_specificity_quantiles = NULL,
+                                         keep_mean_exp_quantiles = NULL)
+```
+
+
+## Mental deterioration
+
+> Loss of previously present mental abilities, generally in adults.
+> Synonyms:    Cognitive decline, Cognitive decline, progressive, Intellectual deterioration, Mental deterioration, Progressive cognitive decline
+
+Not included in `prioritse_targets` outputs by default because:
+    - "tier_auto=3"
+    - "specificity_quantile" (median=6) and "mean_exp_quantile" (median=6) are quite low for most genes associated with "Mental deterioration"
+
+```{r}  
+md_targets <- res_all$top_targets[Phenotype=="Mental deterioration" & q<=0.05] 
+
+sort(table(md_targets[CellType %in% c("Amacrine cells","Ganglion cells")]$Gene), 
+     decreasing = TRUE)
+```
+
+
 
 
 # Session info
