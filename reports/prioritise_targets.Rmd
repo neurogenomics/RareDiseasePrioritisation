@@ -46,11 +46,16 @@ MultiEWCE::create_dt(res$report)
 Generate a network from the top phenotype-celltype-gene associations.
 
 ```{r, fig.height=20, results='asis'}
-vn_top <- MultiEWCE::prioritise_targets_network(top_targets = res$top_targets, 
-                                                 save_path = here::here("reports",
-                                                            "top_targets_network.html"),
-                                                show_plot = FALSE)
+vn_top <- MultiEWCE::prioritise_targets_network(
+    top_targets = res$top_targets, 
+    save_path = here::here("reports","top_targets_network.html"), 
+    show_plot = FALSE)
+
+# visNetwork::visExport(vn_top$plot, type = "pdf", loadDependencies = T)
 # visNetwork::renderVisNetwork(vn_top$plot)
+pagedown::chrome_print(input = here::here("reports","top_targets_network.html"),
+                       output = here::here("reports","top_targets_network.pdf"),
+                       format = "pdf")
 ```
 
 ```{r, results='asis'}
@@ -135,6 +140,7 @@ Note that we set `physics=FALSE` to reduce the computation that it takes to rend
 vn_all <- MultiEWCE::prioritise_targets_network(top_targets = res_all$top_targets, 
                                                 save_path = here::here("reports",
                                                             "all_targets_network.html"), 
+                                                
                                                 physics = FALSE,  
                                                 show_plot = FALSE)
 ```
@@ -233,6 +239,23 @@ sort(table(md_targets[CellType %in% c("Amacrine cells","Ganglion cells")]$Gene),
      decreasing = TRUE)
 ```
 
+## Recurrent Neisserial infections
+
+```{r}
+results <- MultiEWCE::load_example_results()
+rci_targets <-results[Phenotype=="Recurrent Neisserial infections" & q<=0.05] 
+p2g <- HPOExplorer::load_phenotype_to_genes()
+data.table::setnames(p2g,"ID","HPO_ID")
+
+rci_targets <- data.table::merge.data.table(rci_targets,
+                                            p2g[,c("HPO_ID","Gene")],
+                                            by="HPO_ID")
+MultiEWCE::create_dt(rci_targets)
+```
+
+```{r}
+MultiEWCE::agg_results(rci_targets)
+```
 
 
 
