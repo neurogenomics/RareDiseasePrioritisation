@@ -22,7 +22,6 @@ if(!require("MultiEWCE")) remotes::install_github("neurogenomics/MutltiEWCE", de
 res <- MultiEWCE::prioritise_targets()
 ```
 
-
 ### Top targets 
 
 Here are the top gene targets based on the default filtering/sorting criterion of `prioritise_targets`.
@@ -53,9 +52,15 @@ vn_top <- MultiEWCE::prioritise_targets_network(
 
 # visNetwork::visExport(vn_top$plot, type = "pdf", loadDependencies = T)
 # visNetwork::renderVisNetwork(vn_top$plot)
-pagedown::chrome_print(input = here::here("reports","top_targets_network.html"),
-                       output = here::here("reports","top_targets_network.pdf"),
-                       format = "pdf")
+# pagedown::chrome_print(input = here::here("reports","top_targets_network.html"),
+#                        output = here::here("reports","top_targets_network.pdf"),
+#                        format = "pdf")
+webshot::webshot(here::here("reports","top_targets_network.html"), 
+                 zoom = 1, 
+                 vwidth = 2000,
+                 vheight = 1000,
+                 file = path.expand("~/Downloads/ex.pdf"))
+
 ```
 
 ```{r, results='asis'}
@@ -228,8 +233,7 @@ res_all <- MultiEWCE::prioritise_targets(keep_onsets = NULL,
 > Loss of previously present mental abilities, generally in adults.
 > Synonyms:    Cognitive decline, Cognitive decline, progressive, Intellectual deterioration, Mental deterioration, Progressive cognitive decline
 
-Not included in `prioritse_targets` outputs by default because:
-    - "tier_auto=3"
+Not included in `prioritse_targets` outputs by default because: 
     - "specificity_quantile" (median=6) and "mean_exp_quantile" (median=6) are quite low for most genes associated with "Mental deterioration"
 
 ```{r}  
