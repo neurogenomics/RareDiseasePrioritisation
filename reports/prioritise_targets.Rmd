@@ -1,9 +1,13 @@
 ---
-title: "prioritise_targets"
-author: "<h4>Authors:</h4> Momoko Otani, Brian M. Schilder, Nathan G. Skene"
+title: "Rare Disease Celltyping"
+subtitle: "Prioritised Targets Network"
+author: "<h4>Authors:</h4> Brian M. Schilder, Momoko Otani, Nathan G. Skene"
 date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
 output:
-  html_document
+  prettydoc::html_pretty: 
+    theme: hpstr
+    toc: true
+    highlight: github
 ---
 
 # Install packages
@@ -44,7 +48,7 @@ MultiEWCE::create_dt(res$report)
 
 Generate a network from the top phenotype-celltype-gene associations.
 
-```{r, fig.height=20, results='asis'}
+```{r, fig.height=50, results='asis'}
 vn_top <- MultiEWCE::prioritise_targets_network(
     top_targets = res$top_targets,
     mediator_var = list(),
@@ -140,14 +144,12 @@ res_all <- MultiEWCE::prioritise_targets(keep_onsets = NULL,
 
 ## Plot network
 
-Note that we set `physics=FALSE` to reduce the computation that it takes to render the plot.
 
-```{r, fig.height=20} 
+```{r, fig.height=50} 
 vn_all <- MultiEWCE::prioritise_targets_network(top_targets = res_all$top_targets, 
                                                 save_path = here::here("reports",
                                                             "all_targets_network.html"), 
-                                                
-                                                physics = FALSE,  
+                                                mediator_var = list(),
                                                 show_plot = FALSE)
 ```
 
@@ -231,10 +233,11 @@ res_all <- MultiEWCE::prioritise_targets(keep_onsets = NULL,
 
 ## Mental deterioration
 
+Definition of "Mental deterioration" from the [HPO](https://hpo.jax.org/app/browse/term/HP:0001268):
 > Loss of previously present mental abilities, generally in adults.
 > Synonyms:    Cognitive decline, Cognitive decline, progressive, Intellectual deterioration, Mental deterioration, Progressive cognitive decline
 
-Not included in `prioritse_targets` outputs by default because: 
+Not included in `prioritise_targets` outputs by default because: 
     - "specificity_quantile" (median=6) and "mean_exp_quantile" (median=6) are quite low for most genes associated with "Mental deterioration"
 
 ```{r}  
@@ -259,7 +262,8 @@ MultiEWCE::create_dt(rci_targets)
 ```
 
 ```{r}
-MultiEWCE::agg_results(rci_targets)
+rci_agg <- MultiEWCE::agg_results(rci_targets)
+MultiEWCE::create_dt(rci_agg)
 ```
 
 
