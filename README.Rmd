@@ -22,4 +22,6 @@ Thesis project by Momoko Otani, supervised by Nathan Skene and Brian Schilder.
 
 ### [HPO annotations](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/HPO_annotations)
 
+### [subphenotypes](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/subphenotypes)
+
 

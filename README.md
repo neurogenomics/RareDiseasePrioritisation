@@ -26,3 +26,5 @@ Schilder.
 #### [Extended network](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/all_targets_network.html)
 
 ### [HPO annotations](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/HPO_annotations)
+
+### [subphenotypes](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/subphenotypes)

@@ -10,6 +10,10 @@ output:
     number_sections: true
 ---
 
+```{r setup}
+library(data.table)
+```
+
 
 All HPO annotations comes from directly from the HPO site:
 https://hpo.jax.org/app/data/annotations
@@ -17,14 +21,138 @@ https://hpo.jax.org/app/data/annotations
 Detailed columns descriptions:
 https://hpo-annotation-qc.readthedocs.io/en/latest/annotationFormat.html#phenotype-hpoa-format
 
-# phenotype.hpoa file
+# Count metadata annotations
+
+## Parse metadata 
+
+```{r}
+d <- HPOExplorer::load_phenotype_to_genes(3)
+{
+  d[,DiseaseDB:=sapply(DatabaseID,function(x){strsplit(x,":")[[1]][1]})]
+  d <- HPOExplorer::add_death(d, agg_by = "DatabaseID")
+  d <- HPOExplorer::add_ancestor(d)
+  d <- HPOExplorer::add_pheno_frequency(d)
+  d <- HPOExplorer::add_ont_lvl(d)
+  d <- HPOExplorer::add_onset(d)
+  d <- HPOExplorer::add_severity(d)
+  d <- HPOExplorer::add_tier(d) 
+}
+```
+
+### Unique values per attribute
+
+```{r}
+all_vars <- c(
+  "Qualifier","Evidence","Sex","Aspect","Biocuration",
+  "DiseaseDB","ancestor_name",
+  "AgeOfDeath_names","AgeOfDeath_earliest","AgeOfDeath_latest",
+  "AgeOfDeath_score_min","AgeOfDeath_score_max","AgeOfDeath_score_mean",
+  "pheno_freq_name","pheno_freq_min","pheno_freq_max",
+  "Onset_name","Modifier_name","Severity_score",
+  "tier","tier_auto","tier_merge")  
+#### Only select variables with <N unique values ####
+n_uniq <- lapply(stats::setNames(all_vars,
+                                 all_vars),
+                 function(x){ length(unique(unlist(d[[x]]))) })
+print(n_uniq)
+vars <- all_vars[n_uniq<20]
+
+aod_vars <- grep("AgeOfDeath",vars, value = TRUE)
+vars <- vars[!vars %in% aod_vars]
+```
+
+### Plot proportions
+
+```{r}
+plot_proportions <- function(d,
+                             vars,
+                             drop_na=FALSE){
+  lapply(stats::setNames(vars,
+                         vars),
+               function(v){
+  dat <- d[,..v] 
+  dat[get(names(dat)[1])=="",] <- NA
+  if(isTRUE(drop_na)){
+    dat <- dat[!is.na(get(names(dat)[1])),]  
+  }
+  dat[[1]] <- factor(dat[[1]])
+  ggplot2::ggplot(dat,
+                  ggplot2::aes_string(x="1", fill=names(dat)[1])) +
+    ggplot2::geom_bar(stat = "count",
+                      position = ggplot2::position_stack()) +
+    ggplot2::labs(x=NULL, title=v) +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(axis.text.x = ggplot2::element_blank())
+  })
+}
+```
+
+#### Most attributes
+
+```{r, fig.height=12, fig.width=15} 
+plts <- plot_proportions(d = d, 
+                         vars = vars)
+pw <- patchwork::wrap_plots(plts)
+print(pw)
+```
+
+
+#### AgeOfDeath attributes
+
+Plot these separately simply to avoid overplotting.
+
+```{r, fig.height=12, fig.width=15} 
+aod_plts <- plot_proportions(d = d, 
+                             vars = aod_vars)
+aod_pw <- patchwork::wrap_plots(aod_plts)
+print(aod_pw)
+```
+
+Plot again, but without the NA values so we can better see the proportions for diseases that are annotated.
+
+```{r, fig.height=12, fig.width=15} 
+aod_plts <- plot_proportions(d = d, 
+                             vars = aod_vars, 
+                             drop_na = TRUE)
+aod_pw <- patchwork::wrap_plots(aod_plts)
+print(aod_pw)
+```
+
+
+### Count frequencies
+
+Show the top 20 most frequent values for each of the metadata attributes.
+
+```{r}
+counts <- lapply(stats::setNames(all_vars,
+                                 all_vars),
+                 function(v){ 
+  dat <- d[,..v] 
+  dat[get(names(dat)[1])=="",] <- NA
+  head(sort(table(dat[[1]], useNA = "always"), 
+       decreasing = TRUE),20)
+})
+print(counts)
+```
+
+
+# Count X per Y
+
+**Count** :  
+
+- diseases per phenotype
+- phenotypes per disease
+- genes per phenotype
+- genes per disease
+
+## phenotype.hpoa file
 
 ```{r}
 annot <- HPOExplorer::load_phenotype_to_genes(3)
 ```
 
 
-## Number of phenotypes/disease
+### Number of phenotypes/disease
 
 ```{r}
 counts1 <- annot[,list(n_phenotypes=length(unique(HPO_ID))),by="DatabaseID"]
@@ -32,7 +160,7 @@ hist(counts1$n_phenotypes)
 summary(counts1$n_phenotypes)
 ```
 
-### Number of diseases/phenotype
+#### Number of diseases/phenotype
 
 ```{r}
 counts2 <- annot[,list(n_diseases=length(unique(DatabaseID))),by="HPO_ID"]
@@ -40,7 +168,7 @@ hist(counts2$n_diseases, 50)
 summary(counts2$n_diseases)
 ```
 
-# genes_to_phenotype.txt file
+## genes_to_phenotype.txt file
 
 > http://purl.obolibrary.org/obo/hp/hpoa/genes_to_phenotype.txt provides a link between genes and HPO terms. All phenotype terms associated with any disease that is associated with variants in a gene are assigned to that gene in this file. Other files are available on our Jenkins server that filter terms according to provenance of the annotation and frequency of the features in the disease.
 
@@ -50,7 +178,7 @@ data.table::setnames(annot,"LinkID","DatabaseID")
 ```
 
 
-## Number of phenotypes/disease
+### Number of phenotypes/disease
 
 ```{r}
 counts <- annot[,list(n_phenotypes=length(unique(HPO_ID)),
@@ -62,7 +190,7 @@ hist(counts$n_genes)
 summary(counts$n_genes)
 ```
 
-### Number of diseases/phenotype
+#### Number of diseases/phenotype
 
 ```{r}
 counts <- annot[,list(n_diseases=length(unique(DatabaseID)),
@@ -74,7 +202,7 @@ hist(counts$n_genes)
 summary(counts$n_genes)
 ```
 
-# phenotype_to_genes.txt file
+## phenotype_to_genes.txt file
 
 > http://purl.obolibrary.org/obo/hp/hpoa/phenotype_to_genes.txt is analogous, but instead provides links from HPO terms to genes.
 
@@ -82,7 +210,7 @@ summary(counts$n_genes)
 annot <- HPOExplorer::load_phenotype_to_genes(2)
 data.table::setnames(annot,"LinkID","DatabaseID")
 ```
-## Number of phenotypes/disease
+### Number of phenotypes/disease
 
 ```{r}
 counts <- annot[,list(n_phenotypes=length(unique(HPO_ID)),
@@ -94,7 +222,7 @@ hist(counts$n_genes)
 summary(counts$n_genes)
 ```
 
-### Number of diseases/phenotype
+#### Number of diseases/phenotype
 
 ```{r}
 counts <- annot[,list(n_diseases=length(unique(DatabaseID)),

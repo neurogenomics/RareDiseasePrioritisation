@@ -1,0 +1,124 @@
+---
+title: "subphenotypes"
+author: "Brian M. Schilder"
+date: "2023-03-20"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
+---
+
+# Test the "same genes for each phenotype" assumption
+
+Follows conversation on [GitHub here](https://github.com/neurogenomics/RareDiseasePrioritisation/issues/18).
+
+You can think of each phenotype-disease combination as its own "subphenotype", each with semi-overlapping gene sets.
+
+If the disease where the gene lists came from does not matter, the mean correlations within groups of subphenotypes (belonging to a particular phenotype) should be high. If they are low, it means the subphenotypes are very different from one another (despite all being associated with the same phenotype).
+
+## Count the number of phenotypes vs. the number of subphenotypes
+
+- Phenotypes are equal to: *HPO_ID*  
+- Subphenotypes are the combinations of phenotype ID + disease ID: *HPO_ID.HPO_ID.DatabaseID*
+
+```{r}
+results <- MultiEWCE::load_example_results()
+message("N phenotypes: ",formatC(length(unique(results$HPO_ID)),big.mark = ","))
+
+annot <- HPOExplorer::load_phenotype_to_genes(1)
+annot[,HPO_ID.DatabaseID:=paste(HPO_ID,LinkID,sep=".")]
+message("N subphenotypes: ",formatC(length(unique(annot$HPO_ID.DatabaseID)),big.mark = ","))
+```
+
+### Filter subphenotypes
+
+Get only subphenotypes with >4 genes each.
+
+```{r}
+gene_counts <- annot[,list(n=length(unique(Gene))),
+                     by="HPO_ID.DatabaseID"]
+gene_counts <- cbind(gene_counts,
+      data.table::data.table(stringr::str_split(gene_counts$HPO_ID.DatabaseID,"\\.",
+                                                simplify = TRUE)) |> `names<-`(c("HPO_ID","DatabaseID")))
+gene_counts_valid <- gene_counts[n>=4]
+annot <- annot[HPO_ID.DatabaseID %in% gene_counts_valid$HPO_ID.DatabaseID,]
+
+message(round(nrow(gene_counts_valid)/nrow(gene_counts)*100,2),"%",
+        " of HPO_IDs remain after filtering by subphenotype gene lists..")
+```
+
+### Create gene matrix
+
+```{r}
+X <- HPOExplorer::hpo_to_matrix(phenotype_to_genes = annot, 
+                                formula =  "Gene ~ HPO_ID.DatabaseID")  
+```
+
+### Compute correlations between subphenotypes
+
+For each phenotype, compute the mean correlation between each of its subphenotypes.
+
+```{r} 
+#### Parse names ####
+name_map <- cbind(HPO_ID.DatabaseID=colnames(X),
+      data.table::data.table(stringr::str_split(colnames(X),"\\.",
+                                                simplify = TRUE)) |> `names<-`(c("HPO_ID","DatabaseID"))) |>
+  data.table::setkeyv(cols = "HPO_ID.DatabaseID")
+#### Aggregate corr/phenotype group ####
+group_cor <- lapply(stats::setNames(unique(name_map$HPO_ID),
+                                    unique(name_map$HPO_ID)),
+                    function(id){
+  idx <- name_map[HPO_ID==id]$HPO_ID.DatabaseID
+  X_sub <- X[,idx, drop=FALSE]
+  #### Get number of overlapping genes #####
+  rs <- Matrix::rowSums(X_sub)
+  X_sub <- X_sub[rs>0,]
+  intersect_size <- sum(rs==ncol(X_sub))
+  union_size <- sum(rs>0)
+  max_overlap <- max(rs, na.rm = TRUE) 
+  #### Compute corr ####
+  X_cor <- WGCNA::cor(x = X_sub) 
+  diag(X_cor) <- NA
+  rm <- Matrix::rowMeans(X_cor, na.rm = TRUE)
+  data.table::data.table(
+    intersect_size=intersect_size,
+    union_size=union_size,
+    max_overlap=max_overlap,
+    cor_mean=mean(rm, na.rm=TRUE),
+    cor_sd=sd(rm, na.rm = TRUE)
+  )
+}) |> data.table::rbindlist(use.names = TRUE, idcol = "HPO_ID")
+
+```
+
+### Plot
+
+```{r}
+hist(group_cor$cor_mean, 50)
+```
+
+# Summarise
+
+I found that the subphenotype gene lists are not very strongly correlated with one another. Since the presence/absence of a gene is binary, correlation basically equates to "proportion of genes that overlap".
+
+That said, even given the low correlation between subphenotypes within a given phenotype, there are some drawbacks to this subphenotype-focused approach:
+
+1. Each subphenotype potentially has a smaller set of genes that the phenotype. This means that more gene lists will be omitted from EWCE due to the >4 gene rule.
+2. The number of gene lists tested increases from 6,170 phenotypes (our current results) to 33,542 subphenotypes (only 3,946 phenotypes across 335 diseases).
+
+So theoretical debates aside, it seems that the benefit of aggregating gene lists to the level of phenotypes is that it increases our coverage of testable HPO terms (at least with EWCE) and decreases our multiple testing burden.
+
+```{r}
+summary(group_cor$cor_mean)
+```
+
+
+# Session info
+
+```{r}
+sessioninfo::session_info()
+```
+
+
