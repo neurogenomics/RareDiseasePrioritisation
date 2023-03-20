@@ -2,10 +2,22 @@
 title: "HPO_annotations"
 author: "Brian M. Schilder"
 date: "2023-03-20"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
 ---
 
-# Load annotations
+
+All HPO annotations comes from directly from the HPO site:
+https://hpo.jax.org/app/data/annotations
+
+Detailed columns descriptions:
+https://hpo-annotation-qc.readthedocs.io/en/latest/annotationFormat.html#phenotype-hpoa-format
+
+# phenotype.hpoa file
 
 ```{r}
 annot <- HPOExplorer::load_phenotype_to_genes(3)
@@ -28,8 +40,73 @@ hist(counts2$n_diseases, 50)
 summary(counts2$n_diseases)
 ```
 
-# Session info
+# genes_to_phenotype.txt file
 
+> http://purl.obolibrary.org/obo/hp/hpoa/genes_to_phenotype.txt provides a link between genes and HPO terms. All phenotype terms associated with any disease that is associated with variants in a gene are assigned to that gene in this file. Other files are available on our Jenkins server that filter terms according to provenance of the annotation and frequency of the features in the disease.
+
+```{r}
+annot <- HPOExplorer::load_phenotype_to_genes(1)
+data.table::setnames(annot,"LinkID","DatabaseID")
+```
+
+
+## Number of phenotypes/disease
+
+```{r}
+counts <- annot[,list(n_phenotypes=length(unique(HPO_ID)),
+                      n_genes=length(unique(Gene))),
+                 by="DatabaseID"]
+hist(counts$n_phenotypes)
+summary(counts$n_phenotypes)
+hist(counts$n_genes)
+summary(counts$n_genes)
+```
+
+### Number of diseases/phenotype
+
+```{r}
+counts <- annot[,list(n_diseases=length(unique(DatabaseID)),
+                       n_genes=length(unique(Gene))),
+                 by="HPO_ID"]
+hist(counts$n_diseases)
+summary(counts$n_diseases)
+hist(counts$n_genes)
+summary(counts$n_genes)
+```
+
+# phenotype_to_genes.txt file
+
+> http://purl.obolibrary.org/obo/hp/hpoa/phenotype_to_genes.txt is analogous, but instead provides links from HPO terms to genes.
+
+```{r}
+annot <- HPOExplorer::load_phenotype_to_genes(2)
+data.table::setnames(annot,"LinkID","DatabaseID")
+```
+## Number of phenotypes/disease
+
+```{r}
+counts <- annot[,list(n_phenotypes=length(unique(HPO_ID)),
+                      n_genes=length(unique(Gene))),
+                 by="DatabaseID"]
+hist(counts$n_phenotypes)
+summary(counts$n_phenotypes)
+hist(counts$n_genes)
+summary(counts$n_genes)
+```
+
+### Number of diseases/phenotype
+
+```{r}
+counts <- annot[,list(n_diseases=length(unique(DatabaseID)),
+                      n_genes=length(unique(Gene))),
+                 by="HPO_ID"]
+hist(counts$n_diseases)
+summary(counts$n_diseases)
+hist(counts$n_genes)
+summary(counts$n_genes)
+```
+
+# Session info
 
 ```{r}
 sessioninfo::session_info()
