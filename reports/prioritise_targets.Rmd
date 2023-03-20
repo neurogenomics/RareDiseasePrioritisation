@@ -75,8 +75,9 @@ htmltools::includeHTML("https://github.com/neurogenomics/RareDiseasePrioritisati
 
 ### [Full screen version](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/top_targets_network.html)
 
-
 ## Aggregate results
+
+### By phenotype
 
 ```{r}
 df_agg <- MultiEWCE::agg_results(
@@ -94,36 +95,82 @@ df_agg <- MultiEWCE::agg_results(
 MultiEWCE::create_dt(df_agg)
 ```
 
-### Aggregate results
+### By ancestor_name
+
+```{r}
+df_agg_ancestors <- MultiEWCE::agg_results(
+    phenos = res$top_targets,
+    count_var = "Phenotype", 
+    group_var = "ancestor_name")
+
+MultiEWCE::create_dt(df_agg_ancestors)
+```
+
+### Abnormality of the nervous system 
+
+```{r}
+nervous_system <- HPOExplorer::add_ancestor(
+    phenos = res$top_targets[ancestor_name=="Abnormality of the nervous system",][,-c("ancestor","ancestor_name")],
+                                      lvl = 5)
+```
+
+
+#### Cognitive
 
 Subset phenotypes to those included in intellectual disability, 
 and are related to cognition.
 
-```{r}
+```{r} 
+df_cog <- nervous_system[
+    ancestor_name %in% c("Neurodevelopmental abnormality","Abnormality of higher mental function"),]
+sort(unique(df_cog$Phenotype))
 
-df_intel <- HPOExplorer::add_ancestor(
-    phenos = res$top_targets[ancestor_name=="Abnormality of the nervous system",][,-c("ancestor","ancestor_name")],
-                                      lvl = 5)
-df_intel <- df_intel[
-    ancestor_name %in% c("Neurodevelopmental abnormality"),]
-sort(unique(df_intel$Phenotype))
+# df_cog_phenos <- dplyr::group_by(df_cog, ancestor_name) |> dplyr::summarise(phenos=unique(Phenotype))
 ```
 
-### Top genes
+##### Top genes
 
 ```{r} 
-top_genes <- sort(table(df_intel$Gene),
-                  decreasing = TRUE)
-print(top_genes)
+sort(table(df_cog$Gene), decreasing = TRUE)
 ```
 
-### Top cell types
+##### Top cell types
 
 ```{r} 
-top_celltypes <- sort(table(unique(df_intel[,c("Phenotype","HPO_ID","CellType")])$CellType),
+sort(table(unique(df_cog[,c("Phenotype","HPO_ID","CellType")])$CellType),
          decreasing = TRUE)
-print(top_celltypes)
 ```
+
+
+#### Non-cognitive
+
+```{r}
+df_noncog <- nervous_system[!ancestor_name %in% unique(df_cog$ancestor_name),]
+# unique(df_noncog$ancestor_name)
+
+sort(unique(df_noncog$Phenotype))
+```
+
+##### Morphological central nervous system abnormality
+
+```{r}
+df_morpho <- df_noncog[ancestor_name=="Morphological central nervous system abnormality"]
+
+unique(df_morpho$Phenotype)
+```
+
+
+### Abnormality of the musculoskeletal system
+
+```{r}
+musculoskeletal_system <- HPOExplorer::add_ancestor(
+    phenos = res$top_targets[ancestor_name=="Abnormality of the musculoskeletal system",][,-c("ancestor","ancestor_name")],
+                                      lvl = 5)
+
+unique(musculoskeletal_system$Phenotype)
+```
+
+
 
 # Prioritise targets: extended
 
@@ -141,6 +188,7 @@ res_all <- MultiEWCE::prioritise_targets(keep_onsets = NULL,
                                          keep_specificity_quantiles = seq(30,40),
                                          keep_mean_exp_quantiles = seq(30,40))
 ```
+
 
 ## Plot network
 
