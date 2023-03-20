@@ -1,8 +1,12 @@
 README
 ================
-<h4> ¶ Authors: ¶ </h4> ¶ Momoko Otani, Brian M. Schilder, Nathan G.
-Skene
-<h4> ¶ README updated: <i>Feb-07-2023</i> ¶ </h4>
+<h4>  
+Authors:  
+</h4>  
+Momoko Otani, Brian M. Schilder, Nathan G. Skene
+<h4>  
+README updated: <i>Mar-20-2023</i>  
+</h4>
 
 # About
 
@@ -20,3 +24,5 @@ Schilder.
 #### [Reduced network](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/top_targets_network.html)
 
 #### [Extended network](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/all_targets_network.html)
+
+### [HPO annotations](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/HPO_annotations)
