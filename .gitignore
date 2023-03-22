@@ -1,4 +1,4 @@
-networks/*_files$
+networks/*_files/
 # R project files
 .Rproj.user
 .Ruserdata 
