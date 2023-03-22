@@ -29,4 +29,6 @@ Schilder.
 
 ## [Neurodegeneration](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/neurodegeneration)
 
+### [dementia/neurodegeneration vs. diabetes/obesity network](https://neurogenomics.github.io/RareDiseasePrioritisation/networks/dementia_diabetes_network.html)
+
 ## [Symptoms](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/symptoms)

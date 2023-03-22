@@ -1,8 +1,14 @@
 ---
-title: "neurodegeneration"
+title: "Rare Disease Celltyping"
+subtitle: "neurodegeneration"
 author: "Brian M. Schilder"
-date: "2023-03-21"
-output: html_document
+date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
 ---
 
 Trying to have another look through our results for anything neurodegeneration-related, either at the level of phenotype or disease.
@@ -12,8 +18,18 @@ Trying to have another look through our results for anything neurodegeneration-r
 
 ```{r}
 res <- MultiEWCE::load_example_results()
+res <- HPOExplorer::add_disease(res)
 annot <- HPOExplorer::load_phenotype_to_genes(3)
 ```
+
+## Filter results
+
+First, we do some initial filtering of the results to only get significant associations.
+
+```{r}
+res <- res[q<0.05 & symptoms.pval<0.05,]
+```
+
 
 ## Alzheimer's
 
@@ -22,11 +38,7 @@ https://hpo.jax.org/app/browse/term/HP:0002511
 
 ```{r}
 ad <- res[grepl("alzheimer",Phenotype,ignore.case = TRUE)]
-nrow(ad) ## 77 results (1 per celltype)
-ad_sig <- ad[q<0.05]
-nrow(ad_sig) ## 0 sig results
-
-MultiEWCE::create_dt(ad_sig)
+nrow(ad) 
 ```
 
 ## Parkinson's
@@ -36,11 +48,11 @@ MultiEWCE::create_dt(ad_sig)
 "Parkinson's disease" is not in the HPO, but the branch "Parkinsonism" is.
 https://hpo.jax.org/app/browse/term/HP:0001300
 
-We actually do have 2 sig phenotypes here.
+We actually do have 1 sig phenotype here: "Parkinsonism"
 
 ```{r}
 pd_phenos <- HPOExplorer::make_phenos_dataframe(ancestor="Parkinsonism")
-pd1 <- res[HPO_ID %in% pd_phenos$HPO_ID & q<0.05]
+pd1 <- res[HPO_ID %in% pd_phenos$HPO_ID ]
 
 MultiEWCE::create_dt(pd1)
 ```
@@ -57,9 +69,8 @@ This gives us lots of phenotypes, but many of them are not specific to PD: e.g.
 
 ```{r}
 d <- annot[grepl("parkinson",DiseaseName, ignore.case = TRUE)]
-pd <- res[HPO_ID %in% d$HPO_ID & q<0.05]
-
-MultiEWCE::create_dt(pd)
+pd <- res[HPO_ID %in% d$HPO_ID] 
+nrow(pd)
 ```
 
 Let's try to narrow it down to very PD-specific phenotypes.
@@ -79,13 +90,14 @@ MultiEWCE::create_dt(pd_specific)
 ```
 
 
-We can lift this filter a bit and look for PD-associated phenotypes that only appear in 5 or less non-PD diseases. We see phenotype that can indeed be associated with PD, but are not necessarilly exclusive to it: e.g. 
-*Diminished movement*, 
+We can lift this filter a bit and look for PD-associated phenotypes that only appear in 3 or less non-PD diseases. We see phenotype that can indeed be associated with PD, but are not necessarily exclusive to it: e.g.  
 *Abnormal aggressive, impulsive or violent behavior*, 
-*Abnormal nervous system physiology*
+*Pill-rolling tremor*, 
+*"Abnormal CSF protein level* 
 
 ```{r} 
-pd_specific2 <- pd[HPO_ID %in% names(pd_pheno_freqs)[pd_pheno_freqs<=5+n_pd_terms]]
+pd_specific2 <- pd[HPO_ID %in% names(pd_pheno_freqs)[pd_pheno_freqs<=3+n_pd_terms] ]
+
 MultiEWCE::create_dt(pd_specific2)
 ```
 
@@ -99,7 +111,7 @@ As we've seen before, only the higher-level term "Mental deterioration" remains 
 
 ```{r}
 phenos <- HPOExplorer::make_phenos_dataframe(ancestor="Mental deterioration")
-md <- res[HPO_ID %in% phenos$HPO_ID & q<0.05]
+md <- res[HPO_ID %in% phenos$HPO_ID]
 
 MultiEWCE::create_dt(md)
 ```
@@ -115,20 +127,60 @@ that fall under that branch:
 ```{r}
 phenos <- HPOExplorer::make_phenos_dataframe(ancestor="Atrophy/Degeneration affecting the central nervous system")
 
-at <- res[HPO_ID %in% phenos$HPO_ID & q<0.05]
+at <- res[HPO_ID %in% phenos$HPO_ID]
 MultiEWCE::create_dt(at)
 ```
 
 # Multi-trait intersection
 
+
 ## dementia/neurodegeneration vs. diabetes/obesity
 
 Next, let's find examples of celltype-specific enrichment results that relate to diseases/phenotypes in the categories of dementia/neurodegeneration vs. diabetes/obesity.
+ 
+### Query results
 
 ```{r}
+queries <- paste("alzheimer","parkinson","diabetes","obesity",sep = "|")
+phenos <- rbind(
+  HPOExplorer::make_phenos_dataframe(ancestor="Atrophy/Degeneration affecting the central nervous system"),
+  HPOExplorer::make_phenos_dataframe(ancestor="Mental deterioration"),
+  HPOExplorer::make_phenos_dataframe(ancestor="Diabetes mellitus"),
+  HPOExplorer::make_phenos_dataframe(ancestor="Obesity")
+)
+res_inter <- res[grepl(queries,Phenotype,ignore.case = TRUE) | 
+                 grepl(queries,DiseaseName,ignore.case = TRUE) |
+                   HPO_ID %in% phenos$HPO_ID] 
 
+message(formatC(nrow(res_inter),big.mark = ",")," results remain.")
 ```
 
+### Filter results
+
+We still have a lot of results left (500+ rows), which is a bit much to visualize.
+So let's do some additional filtering.
+
+```{r}
+res_filt <- MultiEWCE::prioritise_targets(results = res_inter, 
+                                          keep_tiers = NULL,
+                                          severity_threshold = NULL,
+                                          keep_onsets = NULL, 
+                                          keep_deaths = NULL,
+                                          pheno_ndiseases_threshold = NULL,
+                                          symptom_p_threshold = NULL, 
+                                          symptom_intersection_size_threshold = 2)
+```
+
+### Plot network
+
+```{r, fig.height=10, fig.width=15}    
+vn <- MultiEWCE::prioritise_targets_network(
+  top_targets = res_filt$top_targets, 
+  main = "dementia/neurodegeneration & diabetes/obesity", 
+  save_path = here::here("networks/dementia_diabetes_network.html"))
+```
+
+#### [See here for full-screen version](https://neurogenomics.github.io/RareDiseasePrioritisation/networks/dementia_diabetes_network.html)
 
 # Session info 
 
