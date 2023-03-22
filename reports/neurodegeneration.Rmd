@@ -4,17 +4,9 @@ subtitle: "Neurodegeneration"
 author: "Brian M. Schilder"
 date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
 output: 
-  minidown::mini_document:
-    framework: bootstrap
+  rmarkdown::html_document:
     toc: true
     toc_float: true
-    toc_highlight: true
-    code_folding:
-      source: show
-      output: show
-      message: hide
-      warning: hide
-      error: show
 ---
  
 
@@ -38,7 +30,7 @@ res <- res[q<0.05 & symptoms.pval<0.05,]
 ```
 
 
-## Alzheimer's
+# Alzheimer's
 
 AD is not enriched for any phenotype, likely due to the small number of genes included. GWAS results are more comprehensive than this.
 https://hpo.jax.org/app/browse/term/HP:0002511
@@ -48,7 +40,7 @@ ad <- res[grepl("alzheimer",Phenotype,ignore.case = TRUE)]
 nrow(ad) 
 ```
 
-## Parkinson's
+# Parkinson's
 
 ## Phenotypes
 
@@ -109,7 +101,7 @@ MultiEWCE::create_dt(pd_specific2)
 ```
 
 
-## Mental deterioration
+# Mental deterioration
 
 Get all the phenos from the Mental deterioration branch. This includes many forms of dementia 
  https://hpo.jax.org/app/browse/term/HP:0001268
@@ -141,7 +133,7 @@ MultiEWCE::create_dt(at)
 # Multi-trait intersection
 
 
-## dementia/neurodegeneration vs. diabetes/obesity
+## dementia/neurodegeneration & diabetes/obesity
 
 Next, let's find examples of celltype-specific enrichment results that relate to diseases/phenotypes in the categories of dementia/neurodegeneration vs. diabetes/obesity.
  
