@@ -1,15 +1,22 @@
 ---
 title: "Rare Disease Celltyping"
-subtitle: "neurodegeneration"
+subtitle: "Neurodegeneration"
 author: "Brian M. Schilder"
 date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
 output: 
-  html_document:
+  minidown::mini_document:
+    framework: bootstrap
     toc: true
     toc_float: true
-    toc_depth: 3
-    number_sections: true
+    toc_highlight: true
+    code_folding:
+      source: show
+      output: show
+      message: hide
+      warning: hide
+      error: show
 ---
+ 
 
 Trying to have another look through our results for anything neurodegeneration-related, either at the level of phenotype or disease.
 
@@ -173,11 +180,14 @@ res_filt <- MultiEWCE::prioritise_targets(results = res_inter,
 
 ### Plot network
 
-```{r, fig.height=10, fig.width=15}    
+```{r, fig.height=8, fig.width=8, results='asis'}    
 vn <- MultiEWCE::prioritise_targets_network(
   top_targets = res_filt$top_targets, 
-  main = "dementia/neurodegeneration & diabetes/obesity", 
-  save_path = here::here("networks/dementia_diabetes_network.html"))
+  submain = "dementia/neurodegeneration & diabetes/obesity", 
+  save_path = here::here("networks/dementia_diabetes_network.html"), 
+  show_plot = FALSE)
+
+vn$plot
 ```
 
 #### [See here for full-screen version](https://neurogenomics.github.io/RareDiseasePrioritisation/networks/dementia_diabetes_network.html)

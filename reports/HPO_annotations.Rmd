@@ -4,11 +4,17 @@ subtitle: "HPO annotations"
 author: "Brian M. Schilder"
 date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
 output: 
-  html_document:
+  minidown::mini_document:
+    framework: bootstrap
     toc: true
     toc_float: true
-    toc_depth: 3
-    number_sections: true
+    toc_highlight: true
+    code_folding:
+      source: show
+      output: show
+      message: hide
+      warning: hide
+      error: show
 ---
 
 ```{r setup}
