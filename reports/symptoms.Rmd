@@ -1,0 +1,237 @@
+---
+title: "Rare Disease Celltyping"
+subtitle: "Symptoms"
+author: "Brian M. Schilder"
+date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
+---
+
+# Test the "same genes for each phenotype" assumption
+
+Follows conversation on [GitHub here](https://github.com/neurogenomics/RareDiseasePrioritisation/issues/18).
+
+You can think of each phenotype-disease combination as its own "symptom", each with semi-overlapping gene sets.
+
+If the disease where the gene lists came from does not matter, the mean correlations within groups of symptoms (belonging to a particular phenotype) should be high. If they are low, it means the symptoms are very different from one another (despite all being associated with the same phenotype).
+
+## Count the number of phenotypes vs. the number of symptoms
+
+- Phenotypes are equal to: *HPO_ID*  
+- Symptoms are the combinations of phenotype ID + disease ID: *HPO_ID.HPO_ID.DatabaseID*
+
+```{r}
+results <- MultiEWCE::load_example_results()
+message("N phenotypes: ",formatC(length(unique(results$HPO_ID)),big.mark = ","))
+
+annot <- HPOExplorer::load_phenotype_to_genes(1)
+annot[,HPO_ID.DatabaseID:=paste(HPO_ID,LinkID,sep=".")]
+message("N symptoms: ",formatC(length(unique(annot$HPO_ID.DatabaseID)),big.mark = ","))
+```
+
+### Filter symptoms
+
+Get only symptoms with >4 genes each.
+
+```{r}
+gene_counts <- annot[,list(n=length(unique(Gene))),
+                     by="HPO_ID.DatabaseID"]
+gene_counts <- cbind(gene_counts,
+      data.table::data.table(stringr::str_split(gene_counts$HPO_ID.DatabaseID,"\\.",
+                                                simplify = TRUE)) |> `names<-`(c("HPO_ID","DatabaseID")))
+gene_counts_valid <- gene_counts[n>=4]
+annot <- annot[HPO_ID.DatabaseID %in% gene_counts_valid$HPO_ID.DatabaseID,]
+
+message(round(nrow(gene_counts_valid)/nrow(gene_counts)*100,2),"%",
+        " of HPO_IDs remain after filtering by symptom gene lists.")
+```
+
+### Create gene matrix
+
+```{r}
+X <- HPOExplorer::hpo_to_matrix(phenotype_to_genes = annot, 
+                                formula =  "Gene ~ HPO_ID.DatabaseID")  
+```
+
+### Compute correlations between symptoms
+
+For each phenotype, compute the mean correlation between each of its symptoms.
+
+```{r} 
+#### Parse names ####
+name_map <- cbind(HPO_ID.DatabaseID=colnames(X),
+      data.table::data.table(stringr::str_split(colnames(X),"\\.",
+                                                simplify = TRUE)) |> `names<-`(c("HPO_ID","DatabaseID"))) |>
+  data.table::setkeyv(cols = "HPO_ID.DatabaseID")
+#### Aggregate corr/phenotype group ####
+group_cor <- lapply(stats::setNames(unique(name_map$HPO_ID),
+                                    unique(name_map$HPO_ID)),
+                    function(id){
+  idx <- name_map[HPO_ID==id]$HPO_ID.DatabaseID
+  X_sub <- X[,idx, drop=FALSE]
+  #### Get number of overlapping genes #####
+  rs <- Matrix::rowSums(X_sub)
+  X_sub <- X_sub[rs>0,]
+  intersect_size <- sum(rs==ncol(X_sub))
+  union_size <- sum(rs>0)
+  max_overlap <- max(rs, na.rm = TRUE) 
+  #### Compute corr ####
+  X_cor <- WGCNA::cor(x = X_sub) 
+  diag(X_cor) <- NA
+  rm <- Matrix::rowMeans(X_cor, na.rm = TRUE)
+  data.table::data.table(
+    intersect_size=intersect_size,
+    union_size=union_size,
+    max_overlap=max_overlap,
+    cor_mean=mean(rm, na.rm=TRUE),
+    cor_sd=sd(rm, na.rm = TRUE)
+  )
+}) |> data.table::rbindlist(use.names = TRUE, idcol = "HPO_ID")
+
+```
+
+### Plot
+
+```{r}
+hist(group_cor$cor_mean, 50)
+```
+
+# Summarise
+
+I found that the symptom gene lists are not very strongly correlated with one another. Since the presence/absence of a gene is binary, correlation basically equates to "proportion of genes that overlap".
+
+That said, even given the low correlation between symptoms within a given phenotype, there are some drawbacks to this symptom-focused approach:
+
+1. Each symptom potentially has a smaller set of genes that the phenotype. This means that more gene lists will be omitted from EWCE due to the >4 gene rule.
+2. The number of gene lists tested increases from 6,170 phenotypes (our current results) to 33,542 symptoms (only 3,946 phenotypes across 335 diseases).
+
+So theoretical debates aside, it seems that the benefit of aggregating gene lists to the level of phenotypes is that it increases our coverage of testable HPO terms (at least with EWCE) and decreases our multiple testing burden.
+
+```{r}
+summary(group_cor$cor_mean)
+```
+
+# Linking celltype-phenotype associations to diseases
+
+Which diseases contributed the genes to a particular celltype-phenotype association?
+
+To answer this, I computed a simply gene overlap-based enrichment test for all symptoms, 
+defined as HPO_ID + DiseaseID.
+This meant: 747,584 symptoms x 77 celltypes = 57,563,968 tests.
+
+```r
+gene_data <- HPOExplorer::load_phenotype_to_genes()
+gene_data[,HPO_ID.LinkID:=paste(HPO_ID,LinkID,sep=".")]
+symptoms <- gen_overlap(gene_data = gene_data,
+                             list_name_column = "HPO_ID.LinkID",
+                             cores=30) 
+```
+
+```{r}
+g <- HPOExplorer::load_phenotype_to_genes()
+res <- MultiEWCE::load_example_results("Descartes_All_Results_extras.rds")
+res <- res[q<0.05]
+symp <- MultiEWCE::load_example_results("gen_overlap.symptoms.rds")
+
+
+report <- function(symp,
+                   annot,
+                   symp_var,
+                   annot_var=symp_var){
+  message(paste(formatC(nrow(symp),big.mark = ","),
+                "results remain."))
+  n1 <- length(unique(symp[[symp_var]]))
+  n2 <- length(unique(annot[[annot_var]])) 
+  message(paste(n1,"/",n2,symp_var,
+                paste0("(",round((n1/n2)*100,2),"%)"),
+                "remain."))
+}
+```
+
+First, we remove all tests that had 0 overlap, since we can safely rule those out.
+This still leaves us with >10M results.
+
+```{r}
+symp <- symp[intersection_size>0]
+#### Split IDs apart again ####
+symp[,c("HPO_ID","LinkID"):=data.table::tstrsplit(HPO_ID.LinkID,"\\.")]
+#### Sort by pval then odds.ratio ####
+data.table::setorderv(symp,c("pval","odds.ratio"), c(1,-1))
+
+report(symp, g, symp_var="HPO_ID")
+report(symp, g, symp_var="LinkID")
+```
+
+Next, we try filtering by nominal p-values, leaving 684,697 results.
+
+```{r}
+psig <- symp[pval<0.05,]
+report(psig, g, symp_var="HPO_ID")
+report(psig, g, symp_var="LinkID")
+```
+
+Using multiple-testing correction is too stringent due to the huge number of tests, 
+and only leaves 14 unique diseases (<1%).
+
+```{r}
+qsig <- symp[qval<0.05,]
+report(qsig, g, symp_var="HPO_ID")
+report(qsig, g, symp_var="LinkID")
+```
+
+In either filtering scenario, we are left with less than a complete picture of the celltypes invovled in each symptom. So instead, let's just take all of the ones with at least 1 overlapping genes. We can always filter again later.
+
+Now we can merge back with our celltype-phenotype enrichment results.
+This gives us a 99.3% annotation rate for linking phenotypes back to diseases via celltype-specific mechanisms. It also gives us a new column "intersection" which lists the genes that are mediating that interaction.
+
+```{r}
+res$CellType <- EWCE::fix_celltype_names(res$CellType, make_unique = FALSE)
+res2 <- data.table::merge.data.table(res,
+                                     symp, 
+                                     by=c("HPO_ID","CellType"))
+
+report(res2, res, symp_var="HPO_ID")
+report(res2, g, symp_var="HPO_ID")
+report(res2, g, symp_var="LinkID")
+```
+
+We'll upload the subset of symptoms that were kept in the end to a new file for easy usage later.
+
+```R
+symp_filt <- symp[HPO_ID.LinkID %in% unique(res2$HPO_ID.LinkID)]
+tmp <- file.path(tempdir(),"gen_overlap.symptoms.filt.rds")
+saveRDS(symp_filt, tmp)
+
+piggyback::pb_upload(file = tmp, 
+                     repo = "neurogenomics/MultiEWCE",
+                     tag = "v0.0.1")
+```
+
+```R
+cols <- c("pval","odds.ratio","jaccard","qval")
+data.table::setnames(symp,cols, paste0("symptoms.",gsub("\\.","_",cols)))
+res2 <- data.table::merge.data.table(res,
+                                     symp, 
+                                     all.x = TRUE,
+                                     by=c("HPO_ID","CellType"))
+tmp <- file.path(tempdir(),"Descartes_All_Results_extras.symptoms.rds")
+saveRDS(res2, tmp)
+
+piggyback::pb_upload(file = tmp, 
+                     repo = "neurogenomics/MultiEWCE",
+                     tag = "v0.0.1")
+```
+
+
+
+# Session info
+
+```{r}
+sessioninfo::session_info()
+```
+
+

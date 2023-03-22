@@ -15,7 +15,7 @@ output:
 ```{r, warning=FALSE, message=FALSE}
 if(!require("htmltools")) install.packages("htmltools") 
 if(!require("remotes")) install.packages("remotes") 
-if(!require("MultiEWCE")) remotes::install_github("neurogenomics/MutltiEWCE", dependencies = TRUE)
+if(!require("MultiEWCE")) remotes::install_github("neurogenomics/MultiEWCE", dependencies = TRUE)
 ```
 
 # Prioritise targets

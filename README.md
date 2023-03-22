@@ -17,16 +17,16 @@ project.
 Thesis project by Momoko Otani, supervised by Nathan Skene and Brian
 Schilder.
 
-## Rmarkdown reports
+# Rmarkdown reports
 
-### [Prioritise targets](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/prioritise_targets)
+## [Prioritise targets](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/prioritise_targets)
 
-#### [Reduced network](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/top_targets_network.html)
+### [Reduced network](https://neurogenomics.github.io/RareDiseasePrioritisation/networks/top_targets_network.html)
 
-#### [Extended network](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/all_targets_network.html)
+### [Extended network](https://neurogenomics.github.io/RareDiseasePrioritisation/networks/all_targets_network.html)
 
-### [HPO annotations](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/HPO_annotations)
+## [HPO annotations](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/HPO_annotations)
 
-### [Neurodegeneration](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/neurodegeneration)
+## [Neurodegeneration](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/neurodegeneration)
 
-### [Subphenotypes](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/subphenotypes)
+## [Symptoms](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/symptoms)

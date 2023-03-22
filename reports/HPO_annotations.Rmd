@@ -1,7 +1,8 @@
 ---
-title: "HPO_annotations"
+title: "Rare Disease Celltyping"
+subtitle: "HPO annotations"
 author: "Brian M. Schilder"
-date: "2023-03-20"
+date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
 output: 
   html_document:
     toc: true
@@ -30,6 +31,7 @@ d <- HPOExplorer::load_phenotype_to_genes(3)
 {
   d[,DiseaseDB:=sapply(DatabaseID,function(x){strsplit(x,":")[[1]][1]})]
   d <- HPOExplorer::add_death(d, agg_by = "DatabaseID")
+  d <- HPOExplorer::add_ndisease(d)
   d <- HPOExplorer::add_ancestor(d)
   d <- HPOExplorer::add_pheno_frequency(d)
   d <- HPOExplorer::add_ont_lvl(d)
@@ -55,10 +57,13 @@ n_uniq <- lapply(stats::setNames(all_vars,
                                  all_vars),
                  function(x){ length(unique(unlist(d[[x]]))) })
 print(n_uniq)
+#### Filter variables ####
+## Must contain less than 20 unique values 
 vars <- all_vars[n_uniq<20]
 
 aod_vars <- grep("AgeOfDeath",vars, value = TRUE)
 vars <- vars[!vars %in% aod_vars]
+aod_vars <- aod_vars[!aod_vars %in% c("AgeOfDeath_names","AgeOfDeath_counts")]
 ```
 
 ### Plot proportions
@@ -70,7 +75,7 @@ plot_proportions <- function(d,
   lapply(stats::setNames(vars,
                          vars),
                function(v){
-  dat <- d[,..v] 
+  dat <- d[,..v]
   dat[get(names(dat)[1])=="",] <- NA
   if(isTRUE(drop_na)){
     dat <- dat[!is.na(get(names(dat)[1])),]  
@@ -129,7 +134,7 @@ counts <- lapply(stats::setNames(all_vars,
                  function(v){ 
   dat <- d[,..v] 
   dat[get(names(dat)[1])=="",] <- NA
-  head(sort(table(dat[[1]], useNA = "always"), 
+  head(sort(table(unlist(dat[[1]]), useNA = "always"), 
        decreasing = TRUE),20)
 })
 print(counts)

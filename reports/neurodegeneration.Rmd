@@ -119,6 +119,16 @@ at <- res[HPO_ID %in% phenos$HPO_ID & q<0.05]
 MultiEWCE::create_dt(at)
 ```
 
+# Multi-trait intersection
+
+## dementia/neurodegeneration vs. diabetes/obesity
+
+Next, let's find examples of celltype-specific enrichment results that relate to diseases/phenotypes in the categories of dementia/neurodegeneration vs. diabetes/obesity.
+
+```{r}
+
+```
+
 
 # Session info 
 
