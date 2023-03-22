@@ -5,7 +5,7 @@ Authors:
 </h4>  
 Momoko Otani, Brian M. Schilder, Nathan G. Skene
 <h4>  
-README updated: <i>Mar-20-2023</i>  
+README updated: <i>Mar-22-2023</i>  
 </h4>
 
 # About
@@ -27,4 +27,6 @@ Schilder.
 
 ### [HPO annotations](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/HPO_annotations)
 
-### [subphenotypes](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/subphenotypes)
+### [Neurodegeneration](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/subphenotypes)
+
+### [Subphenotypes](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/subphenotypes)

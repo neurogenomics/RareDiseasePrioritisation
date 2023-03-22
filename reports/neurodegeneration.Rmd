@@ -1,0 +1,129 @@
+---
+title: "neurodegeneration"
+author: "Brian M. Schilder"
+date: "2023-03-21"
+output: html_document
+---
+
+Trying to have another look through our results for anything neurodegeneration-related, either at the level of phenotype or disease.
+
+
+# Import results 
+
+```{r}
+res <- MultiEWCE::load_example_results()
+annot <- HPOExplorer::load_phenotype_to_genes(3)
+```
+
+## Alzheimer's
+
+AD is not enriched for any phenotype, likely due to the small number of genes included. GWAS results are more comprehensive than this.
+https://hpo.jax.org/app/browse/term/HP:0002511
+
+```{r}
+ad <- res[grepl("alzheimer",Phenotype,ignore.case = TRUE)]
+nrow(ad) ## 77 results (1 per celltype)
+ad_sig <- ad[q<0.05]
+nrow(ad_sig) ## 0 sig results
+
+MultiEWCE::create_dt(ad_sig)
+```
+
+## Parkinson's
+
+## Phenotypes
+
+"Parkinson's disease" is not in the HPO, but the branch "Parkinsonism" is.
+https://hpo.jax.org/app/browse/term/HP:0001300
+
+We actually do have 2 sig phenotypes here.
+
+```{r}
+pd_phenos <- HPOExplorer::make_phenos_dataframe(ancestor="Parkinsonism")
+pd1 <- res[HPO_ID %in% pd_phenos$HPO_ID & q<0.05]
+
+MultiEWCE::create_dt(pd1)
+```
+
+## Diseases
+
+We can also search for phenotypes via "Parkinson's" as a disease.
+
+This gives us lots of phenotypes, but many of them are not specific to PD: e.g.
+*Autosomal recessive inheritance*, 
+*Open mouth*, 
+*Macrocephaly*,	
+*Urinary urgency*
+
+```{r}
+d <- annot[grepl("parkinson",DiseaseName, ignore.case = TRUE)]
+pd <- res[HPO_ID %in% d$HPO_ID & q<0.05]
+
+MultiEWCE::create_dt(pd)
+```
+
+Let's try to narrow it down to very PD-specific phenotypes.
+
+These PD-associated phenotypes only appear once in the HPO annotations. 
+Thus, they must be PD-specific.
+
+That leaves us with just 2 phenotypes.
+
+```{r}
+n_pd_terms <- length(unique(pd_phenos$HPO_ID))
+pd_pheno_freqs <- sort(table(annot[HPO_ID %in% d$HPO_ID]$HPO_ID))
+hist(pd_pheno_freqs, 50)
+pd_specific <- pd[HPO_ID %in% names(pd_pheno_freqs)[pd_pheno_freqs<=1+n_pd_terms]]
+
+MultiEWCE::create_dt(pd_specific)
+```
+
+
+We can lift this filter a bit and look for PD-associated phenotypes that only appear in 5 or less non-PD diseases. We see phenotype that can indeed be associated with PD, but are not necessarilly exclusive to it: e.g. 
+*Diminished movement*, 
+*Abnormal aggressive, impulsive or violent behavior*, 
+*Abnormal nervous system physiology*
+
+```{r} 
+pd_specific2 <- pd[HPO_ID %in% names(pd_pheno_freqs)[pd_pheno_freqs<=5+n_pd_terms]]
+MultiEWCE::create_dt(pd_specific2)
+```
+
+
+## Mental deterioration
+
+Get all the phenos from the Mental deterioration branch. This includes many forms of dementia 
+ https://hpo.jax.org/app/browse/term/HP:0001268
+
+As we've seen before, only the higher-level term "Mental deterioration" remains significant. Perhaps due to the greater number of genes in this higher level.
+
+```{r}
+phenos <- HPOExplorer::make_phenos_dataframe(ancestor="Mental deterioration")
+md <- res[HPO_ID %in% phenos$HPO_ID & q<0.05]
+
+MultiEWCE::create_dt(md)
+```
+
+## Atrophy/Degeneration affecting the central nervous system
+
+HPO has the term: **Atrophy/Degeneration affecting the central nervous system** 
+https://hpo.jax.org/app/browse/term/HP:0007367
+
+In our results, we found a number of significantly enriched phenotypes
+that fall under that branch:
+
+```{r}
+phenos <- HPOExplorer::make_phenos_dataframe(ancestor="Atrophy/Degeneration affecting the central nervous system")
+
+at <- res[HPO_ID %in% phenos$HPO_ID & q<0.05]
+MultiEWCE::create_dt(at)
+```
+
+
+# Session info 
+
+<details>
+```{r}
+sessionInfo()
+```
+</details>
