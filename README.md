@@ -27,6 +27,6 @@ Schilder.
 
 ### [HPO annotations](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/HPO_annotations)
 
-### [Neurodegeneration](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/subphenotypes)
+### [Neurodegeneration](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/neurodegeneration)
 
 ### [Subphenotypes](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/subphenotypes)
