@@ -121,6 +121,8 @@ So theoretical debates aside, it seems that the benefit of aggregating gene list
 summary(group_cor$cor_mean)
 ```
 
+
+
 # Linking celltype-phenotype associations to diseases
 
 Which diseases contributed the genes to a particular celltype-phenotype association?
@@ -140,7 +142,7 @@ symptoms <- gen_overlap(gene_data = gene_data,
 ```{r}
 g <- HPOExplorer::load_phenotype_to_genes()
 res <- MultiEWCE::load_example_results("Descartes_All_Results_extras.rds")
-res <- res[q<0.05]
+# res <- res[q<0.05]
 symp <- MultiEWCE::load_example_results("gen_overlap.symptoms.rds")
 
 
@@ -197,7 +199,7 @@ This gives us a 99.3% annotation rate for linking phenotypes back to diseases vi
 ```{r}
 res$CellType <- EWCE::fix_celltype_names(res$CellType, make_unique = FALSE)
 res2 <- data.table::merge.data.table(res,
-                                     symp, 
+                                     symp,  
                                      by=c("HPO_ID","CellType"))
 
 report(res2, res, symp_var="HPO_ID")
@@ -224,7 +226,7 @@ res2 <- data.table::merge.data.table(res,
                                      symp, 
                                      all.x = TRUE,
                                      by=c("HPO_ID","CellType"))
-tmp <- file.path(tempdir(),"Descartes_All_Results_extras.symptoms.rds")
+tmp <- file.path(tempdir(),"Descartes_All_Results_extras.symptoms.full_join.rds")
 saveRDS(res2, tmp)
 
 piggyback::pb_upload(file = tmp, 

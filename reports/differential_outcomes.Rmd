@@ -1,0 +1,490 @@
+---
+title: "differential_outcomes"
+author: "Brian M. Schilder"
+date: "2023-03-23"
+output: html_document
+---
+
+```{r setup, fig.height=10, fig.width=8}
+library(data.table)
+library(ggplot2)
+library(ggridges)
+```
+
+
+> Can we say, that this phenotype, when it acts via this celltype, has a different clinical course?
+
+# Import data
+
+```{r}
+d <- MultiEWCE::load_example_results("Descartes_All_Results_extras.symptoms.full_join.rds")
+
+{
+  d <- HPOExplorer::add_disease(d)
+  d$Phenotype <- 
+    HPOExplorer::harmonise_phenotypes(d$HPO_ID, keep_order = TRUE)
+  d[,DiseaseDB:=sapply(DatabaseID,function(x){strsplit(x,":")[[1]][1]})]
+  d <- HPOExplorer::add_death(d, agg_by = "DatabaseID")
+  d <- HPOExplorer::add_ndisease(d)
+  d <- HPOExplorer::add_ancestor(d)
+  d <- HPOExplorer::add_pheno_frequency(d)
+  d <- HPOExplorer::add_ont_lvl(d)
+  d <- HPOExplorer::add_onset(d, agg_by = c("DatabaseID","HPO_ID"))
+  d <- HPOExplorer::add_severity(d)
+  d <- HPOExplorer::add_tier(d) 
+} 
+```
+
+
+Find phenotypes associated w/ 20+ diseases & have metadata.
+
+Then test whether the EWCE enrichment *p-values* (conditional on **celltype**) significantly affect whether the **phenotype** affects clinical outcomes (e.g. age of death).
+
+The formula for the linear model is as follows:
+> `outcome ~ EWC_pvalue * celltype`
+
+# Run tests
+
+```{r Run tests}  
+save_path <- here::here("reports","differential_outcomes.csv.gz")
+if(file.exists(save_path)){
+  res_dt <- data.table::fread(save_path)
+} else {
+    vars <- c("AgeOfDeath_score_min","AgeOfDeath_score_max","AgeOfDeath_score_mean",
+            "Onset_score_min","Onset_score_max","Onset_score_mean",
+            "pheno_freq_min","pheno_freq_max","pheno_freq_mean",
+            "Severity_score","tier_merge"
+            # "n_diseases","symptoms.pval"
+            )
+  set.seed(2023)
+  options(future.globals.maxSize = 8000*1024^2)
+  #### Iterate over each variable ####
+  res_dt <- lapply(stats::setNames(vars,vars),
+                   function(v){
+    message("Testing: ",v)
+    d1 <- d[!is.na(get(v))]
+    d1[,n_diseases:=length(unique(DatabaseID)), by="HPO_ID"]
+    d1 <- d1[n_diseases>20]
+    ids <- unique(d1$HPO_ID)
+    #### Iterate over each HPO ID ####
+    furrr::future_map(.x = ids, 
+                      .progress = TRUE,
+                      .f = function(hpo_id){ 
+      d2 <- d1[HPO_ID==hpo_id]                  
+      if(length(unique(d2[[v]]))<2 | 
+         length(unique(d2[["CellType"]]))<2) {
+        return(NULL)
+      }               
+      res <- lm(data = d2, 
+                formula = paste(v,"~ p*CellType"))  
+      data.table::data.table(broom::tidy(res))[,HPO_ID:=hpo_id]
+    }) |> data.table::rbindlist()
+  }) |> data.table::rbindlist(fill = TRUE, use.names = TRUE, idcol = "variable") 
+  res_dt[,test_id:=paste(variable,HPO_ID,sep=".")]
+  data.table::fwrite(res_dt,save_path)
+} 
+```
+
+# Plot 
+
+## Intercepts
+
+Plotting the q-value of the intercept of each test basically tells us the number of phenotypes in which celltype was a strong modifier of each clinical course.
+
+```{r}
+plot_variables <- function(res_dt, 
+                           type="barplot",
+                           scales="free"){
+  dat <- res_dt[term=="(Intercept)"][,q.value:=stats::p.adjust(p = p.value,method = "fdr")]
+  if(type=="violin"){ 
+    ggplot(dat, aes(x=-log10(q.value), y=variable, fill=variable)) +
+      geom_violin(show.legend = FALSE, color=alpha("black",.3), na.rm = TRUE) +
+      geom_point(size=1, alpha=.1, show.legend = FALSE, na.rm = TRUE) +
+      geom_vline(xintercept = -log10(0.05), linetype="dashed", alpha=0.5,color="blue") +
+      annotate(x=-log10(0.05), y=-1.1,
+               label=expression("| q-value<0.05" %->% ""),
+               geom = "text", hjust=0,
+               size=3,color=alpha("black",.5)) +
+      coord_cartesian(ylim = c(0, 8), clip = "off") +
+      theme_bw()
+  } else {
+    ggplot(dat, aes(x=-log10(q.value), 
+                          fill=variable)) +
+      geom_histogram(bins = 75, show.legend = FALSE) +
+      geom_vline(xintercept = -log10(0.05), linetype="dashed", alpha=0.5, color="blue") +
+      facet_wrap(facets = variable~., scales = scales) +
+      scale_fill_viridis_d(option = "mako", begin = .25, end = .8) +
+      theme_bw() +
+      theme(strip.background = element_rect(fill="white"))
+  }
+}
+```
+
+### Violin plot
+
+Summarised as a violin plot:
+```{r}
+vp <- plot_variables(res_dt = res_dt,
+                     type = "violin")
+vp
+```
+
+Let's cut off super significant values so that we can see the distributions better:
+```{r}
+vp + xlim(0,110)
+```
+
+
+### Histograms
+
+We can see the distributions a bit better with histograms.
+
+The vast majority of tests came back as significant. Meaning celltypes very have an impact on all clinical course variables.
+
+```{r, fig.width=8}
+plot_variables(res_dt = res_dt,
+               type = "histogram")
+```
+
+
+## Celltypes
+
+> What proportion of celltypes are each phenotype enriched for?
+
+Finally, let's plot the p-values of each celltype within the model.
+This shows that celltypes tend not to be indiscriminately associated with most phenotype.
+
+In other words, celltypes are relatively specific to certain symptoms/phenotypes.
+
+
+```{r}
+plot_celltypes <- function(res_dt,
+                           v=NULL,
+                           x_var="-log10(p.value)",
+                           scales="free_y"){
+  
+  dat <- res_dt[grepl("^CellType",term)][,term:=gsub("^CellType","",term)]
+  if(!is.null(v)){
+      dat <- dat[variable %in% v]
+  } 
+  gp <- ggplot(dat, 
+              aes_string(x=x_var, 
+                        fill="term",
+                        color="term")) +
+    geom_density(adjust=.9, position = "stack", color=alpha("cyan",.75), linewidth=.01, na.rm = TRUE) + 
+    scale_fill_manual(values = pals::ocean.phase(n = length(unique(dat$term)))) + 
+    theme_bw() + 
+    theme(legend.key.size = unit(1, 'lines'), #change legend key size
+      legend.key.height = unit(.5, 'lines'), #change legend key height
+      legend.key.width = unit(.5, 'cm'), #change legend key width
+      legend.title = element_text(size=6), #change legend title font size
+      legend.text = element_text(size=5), 
+      legend.background = element_blank(),
+      strip.background = element_rect(fill="white"), 
+      legend.direction = "horizontal",
+     legend.position="bottom"
+     ) +
+    guides(fill=guide_legend(ncol=5)) + 
+    facet_wrap(facets = variable~.,
+               scales = scales) 
+
+  if(x_var=="-log10(p.value)"){
+      gp <- gp + 
+        geom_vline(xintercept = -log10(0.05), linetype="dashed", alpha=0.5, color="blue")
+  }
+  return(gp)
+}
+```
+
+
+```{r, fig.height=7, fig.width=10, warning=FALSE}
+plot_celltypes(res_dt = res_dt)
+```
+
+
+> What is the magnitude of effect of celltype identity on each clinical course?
+
+
+```{r}
+plot_celltypes(res_dt = res_dt, 
+               x_var = "log10(abs(estimate))", 
+               scales="free")
+```
+
+
+## Distributions
+
+Now let's highlight some specific examples where celltype can cause a differential clinical course.
+ 
+```{r} 
+sig_ids <- res_dt[term=="(Intercept)"][,q.value:=stats::p.adjust(p = p.value,method = "fdr")][q.value<0.05]$test_id
+sig_dt <- res_dt[test_id %in% sig_ids][grepl("^CellType",term)][,CellType:=gsub("^CellType","",term)] 
+
+message(formatC(length(unique(sig_dt$HPO_ID)),big.mark = ","),
+        " phenotypes have a differential clinical course dependent on the celltype:")
+
+MultiEWCE::create_dt(head(sig_dt))
+```
+
+
+
+```{r}
+id.vars <- c("HPO_ID","Phenotype","CellType")
+d_melt <- 
+  (d[,unique(c(id.vars,unique(sig_dt$variable)) ),with=FALSE] |>
+  unique() |>
+  data.table::melt.data.table(
+    id.vars = id.vars,
+    measure.vars = unique(sig_dt$variable))
+  )[!is.na(value)]
+
+
+dat <- data.table::merge.data.table(sig_dt, 
+                                    d_melt,
+                                    all.x = TRUE,
+                                    all.y = TRUE,
+    by=c("HPO_ID","variable","CellType")) |> unique()
+dat[is.na(p.value)]$p.value <- 1
+dat[,modifying_celltype:=factor(p.value<.05, levels = c(TRUE, FALSE),
+                                ordered = TRUE)]  
+dat[,value_mean:=mean(value),by="variable"]
+dat[,direction:=ifelse(estimate>0,"+","-"),]
+dat[,directional_diff:=ifelse(estimate>0,
+                              value_mean+value,
+                              value_mean-value)]
+dat[,directional_diff:=ifelse(directional_diff<0,0,directional_diff)]
+dat[,fdr:=stats::p.adjust(p.value,method = "fdr")]
+```
+
+
+```{r}
+ggplot(dat, aes(x=modifying_celltype,
+                y= directional_diff , 
+                fill=modifying_celltype)) +
+  geom_violin(na.rm = TRUE) +
+  geom_boxplot(fill="transparent", color="turquoise", 
+               alpha=.2,
+               outlier.alpha = .25, na.rm = TRUE) +
+  facet_wrap(facets = .~variable, scales = "free") +
+  scale_fill_viridis_d(option = "mako", begin = .25, direction = -1) +
+  labs(x="Directional difference", y=NULL) +
+  theme_bw() +
+  theme(axis.text.x = element_blank(), 
+        strip.background = element_blank())  
+```
+
+
+
+Let's plot the distribution each metadata attribute overall.
+
+```{r} 
+  ggplot(dat, 
+         aes(x=value, 
+             fill=variable,
+             y = -0.5)) +
+    geom_boxplot(position = position_dodge2(preserve = "single"), 
+                 show.legend = FALSE, na.rm = TRUE) +
+    geom_density(aes(x = value, fill = variable),
+                 show.legend = TRUE, na.rm = TRUE, inherit.aes = FALSE,
+                 alpha=.75, adjust=.5) + 
+    facet_wrap(facets = variable~.,
+               scales="free_x", 
+               ncol = 3) +
+    stat_boxplot(geom = "vline", aes(xintercept = ..xlower..),
+                 width=position_dodge2(width = 1)) +
+    stat_boxplot(geom = "vline", aes(xintercept = ..xmiddle..),
+                 width=position_dodge2(width = 1)) +
+    stat_boxplot(geom = "vline", aes(xintercept = ..xupper..),
+                 width=position_dodge2(width = 1)) + 
+    labs(y="Density") +
+    scale_y_discrete(drop=FALSE) +
+    scale_fill_viridis_d(option = "mako", alpha=.7,
+                         begin = .25, end=.75,
+                         drop=FALSE) + 
+    theme_bw() + 
+    theme(strip.background = element_blank())
+
+```
+
+
+For each test result, what is the absolute difference in the quantitative clinical course between the modifying celltypes and the non-modifiying celltypes?
+
+```{r} 
+## Find instances where we have a pvalue but no estimate
+p_not_e <- nrow(dat[(!is.na(p.value)) & is.na(estimate)])
+
+# test_id = clinical course + phenotype 
+dat_diff <- dat[,list( 
+  n_modifying=length(unique(CellType[modifying_celltype==TRUE])),
+  n_nonmodifying=sum(modifying_celltype==FALSE),
+  
+  value_modifying=mean(value[modifying_celltype==TRUE]), 
+  value_nonmodifying=mean(value[modifying_celltype==FALSE]), 
+  
+  estimate_modifying=mean(estimate[modifying_celltype==TRUE]),
+  estimate_nonmodifying=mean(estimate[modifying_celltype==FALSE])
+), 
+    by=c("variable","HPO_ID","test_id")][n_modifying>0 & n_nonmodifying>0][,value_diff:=abs(value_modifying-value_nonmodifying)][,estimate_diff:=abs(estimate_modifying-estimate_nonmodifying)]
+```
+
+
+```{r}
+  ggplot(dat_diff, 
+         aes(x=value_diff, 
+             fill=variable,
+             y = "Boxplot")) +
+    geom_density(aes(x = value_diff, fill = variable),
+                 show.legend = TRUE, na.rm = TRUE, inherit.aes = FALSE,
+                 alpha=.75, adjust=.5, color="white") + 
+    geom_boxplot(position = position_dodge2(preserve = "single"), 
+                 show.legend = FALSE) +
+    facet_wrap(facets = variable~.,
+               scales="free_x", 
+               ncol = 3) +
+    stat_boxplot(geom = "vline", aes(xintercept = ..xlower..),
+                 width=position_dodge2(width = 1)) +
+    stat_boxplot(geom = "vline", aes(xintercept = ..xmiddle..),
+                 width=position_dodge2(width = 1)) +
+    stat_boxplot(geom = "vline", aes(xintercept = ..xupper..),
+                 width=position_dodge2(width = 1)) + 
+    labs(y="Density") +
+    scale_y_discrete(drop=FALSE) +
+    scale_fill_viridis_d(option = "mako", alpha=.7,
+                         begin = .25, end=.75,
+                         drop=FALSE) +
+    theme_bw() + 
+    theme(strip.background = element_blank())
+```
+
+
+Now let's try to project these difference back onto the full data distribution so we can see how different that looks on the scale.
+
+
+We will want to differentiate between +/- values to get a sense of how much higher or how much lower celltypes can make a given clinical course.
+
+If the estimate is negative, subtract the difference between the population mean and the values from the population mean:
+
+When the estimates are positive 
+> lower = mean + abs(mean-values)
+
+When the estimates are negative
+> lower = mean - abs(mean-values)
+
+```{r, message=FALSE, warning=FALSE, fig.height=10, fig.width=13}   
+lvls <- c("1. Population distribution",
+          "2. All results",
+          "3. Non-modifying cell types\n(p-value>0.05)",
+          "4. Modifying cell types\n(p-value<0.05)",
+          "5. Modifying cell types\n(p-value<0.005)",
+          "6. Modifying cell types\n(FDR<0.05)",
+          "7. Directional difference") 
+
+ ggplot(data = dat[modifying_celltype==TRUE,], 
+         aes(x=directional_diff,
+             y = tail(lvls,1))) +
+    ggridges::stat_density_ridges(
+      aes(x = value, 
+          y = lvls[1],
+          color = lvls[1],
+          fill = 0.5 - abs(0.5 - stat(ecdf))) ,  
+      data=d_melt, 
+      # color="purple",
+       geom = "density_ridges_gradient", calc_ecdf = TRUE,
+      quantiles = 4, quantile_lines = TRUE, 
+      quantile_fun=function(x,...)mean(x),
+      alpha = 0.5) +
+   ggridges::stat_density_ridges(
+     aes(x = directional_diff, 
+         y = lvls[2],
+         color=lvls[2],
+         fill = 0.5 - abs(0.5 - stat(ecdf))),
+     data = dat, 
+      # color="red",
+       geom = "density_ridges_gradient", calc_ecdf = TRUE,
+      quantiles = 4, quantile_lines = TRUE, 
+     quantile_fun=function(x,...)mean(x),
+      alpha = 0.5) + 
+  ggridges::stat_density_ridges(
+     aes(x = directional_diff, 
+         y = lvls[3],
+         color=lvls[3],
+         fill = 0.5 - abs(0.5 - stat(ecdf))),
+     data = dat[modifying_celltype==FALSE,], 
+      # color="red",
+       geom = "density_ridges_gradient", calc_ecdf = TRUE,
+      quantiles = 4, quantile_lines = TRUE, 
+     quantile_fun=function(x,...)mean(x),
+      alpha = 0.5) + 
+   #### 
+    ggridges::stat_density_ridges(
+     aes(x = directional_diff,
+         y = lvls[4],
+         color = lvls[4],
+         fill = 0.5 - abs(0.5 - stat(ecdf))),
+     data = dat[modifying_celltype==TRUE & p.value<0.05,],  
+       geom = "density_ridges_gradient", calc_ecdf = TRUE,
+      quantiles = 4, quantile_lines = TRUE, 
+      quantile_fun=function(x,...)mean(x),
+      jittered_points = FALSE, 
+      position = position_points_jitter(width = 0.05, 
+                                        yoffset = -.1,
+                                        height = 0),
+    point_shape = '|', point_size = 3,alpha = 0.5) +
+   
+    ggridges::stat_density_ridges(
+     aes(x = directional_diff, 
+         y = lvls[5],
+         color=lvls[5],
+         fill = 0.5 - abs(0.5 - stat(ecdf))),
+      data = dat[modifying_celltype==TRUE & p.value<0.005,],  
+      # color="red",
+       geom = "density_ridges_gradient", calc_ecdf = TRUE,
+      quantiles = 4, quantile_lines = TRUE, 
+     quantile_fun=function(x,...)mean(x),
+      alpha = 0.5) + 
+    ggridges::stat_density_ridges(
+     aes(x = directional_diff, 
+         y = lvls[6],
+         color=lvls[6],
+         fill = 0.5 - abs(0.5 - stat(ecdf))),
+      data = dat[modifying_celltype==TRUE & fdr<0.05,],  
+      # color="red",
+       geom = "density_ridges_gradient", calc_ecdf = TRUE,
+      quantiles = 4, quantile_lines = TRUE, 
+     quantile_fun=function(x,...)mean(x),
+      alpha = 0.5) + 
+    scale_fill_viridis_c(option = "mako", alpha=.8) +
+   scale_color_viridis_d(option = "plasma", alpha=.8, end=.8) +
+   facet_wrap(facets = variable~.,
+               scales="free",
+               ncol = 3) +
+    labs(y="Density", x="Directional difference") + 
+    theme_bw() + 
+    theme(strip.background = element_blank()) +
+    xlim(limits = c(0, NA))
+   # geom_boxplot(aes(color=direction),
+   #              data = dat[modifying_celltype==TRUE,],
+   #               position = position_identity(), 
+   #               show.legend = TRUE) + 
+   #  stat_boxplot(geom = "vline", aes(xintercept = ..xlower..),
+   #               width=position_dodge2(width = 1),
+   #               show.legend = FALSE) +
+   #  stat_boxplot(geom = "vline", aes(xintercept = ..xmiddle..),
+   #               width=position_dodge2(width = 1),
+   #               show.legend = FALSE) +
+   #  stat_boxplot(geom = "vline", aes(xintercept = ..xupper..),
+   #               width=position_dodge2(width = 1),
+   #               show.legend = FALSE) 
+
+```
+
+
+
+# Session info 
+
+<details>
+```{r}
+sessionInfo()
+```
+</details>
+<hr>

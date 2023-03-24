@@ -36,6 +36,8 @@ https://hpo-annotation-qc.readthedocs.io/en/latest/annotationFormat.html#phenoty
 d <- HPOExplorer::load_phenotype_to_genes(3)
 {
   d[,DiseaseDB:=sapply(DatabaseID,function(x){strsplit(x,":")[[1]][1]})]
+  d$Phenotype <- 
+    HPOExplorer::harmonise_phenotypes(d$HPO_ID, keep_order = TRUE)
   d <- HPOExplorer::add_death(d, agg_by = "DatabaseID")
   d <- HPOExplorer::add_ndisease(d)
   d <- HPOExplorer::add_ancestor(d)
@@ -244,6 +246,8 @@ summary(counts$n_diseases)
 hist(counts$n_genes)
 summary(counts$n_genes)
 ```
+
+
 
 # Session info
 
