@@ -1728,8 +1728,10 @@ message(length(unique(res$DatabaseID)),&quot; diseases.&quot;)</code></pre>
 </div>
 <div id="visualise-targets" class="section level2">
 <h2>Visualise targets</h2>
+<div id="default-layout" class="section level3">
+<h3>Default layout</h3>
 <pre class="r"><code>vn &lt;- MultiEWCE::prioritise_targets_network(top_targets = targets$top_targets,
-                                            submain = &quot;Cardiovascular targets network&quot;,
+                                            submain = &quot;Cardiovascular targets network&quot;, 
                                             save_path = here::here(&quot;networks/cardiovascular_network.html&quot;))</code></pre>
 <pre><code>## Loading required namespace: pals</code></pre>
 <pre><code>## Loading required namespace: igraph</code></pre>
@@ -1741,6 +1743,21 @@ message(length(unique(res$DatabaseID)),&quot; diseases.&quot;)</code></pre>
 <div id="see-here-for-full-screen-version" class="section level4">
 <h4><a href="https://neurogenomics.github.io/RareDiseasePrioritisation/networks/cardiovascular_network.html">See
 here for full-screen version</a></h4>
+</div>
+</div>
+<div id="hierarchical-layout" class="section level3">
+<h3>Hierarchical layout</h3>
+<pre class="r"><code>vn &lt;- MultiEWCE::prioritise_targets_network(top_targets = targets$top_targets,
+                                            submain = &quot;Cardiovascular targets network&quot;,
+                                            layout = &quot;layout_with_sugiyama&quot;,
+                                            save_path = here::here(&quot;networks/cardiovascular_hierarchical_network.html&quot;))</code></pre>
+<pre><code>## Creating network.</code></pre>
+<pre><code>## Creating plot.</code></pre>
+<pre><code>## Saving plot ==&gt; /Users/schilder/Desktop/ewce/RareDiseasePrioritisation/networks/cardiovascular_hierarchical_network.html</code></pre>
+<div id="see-here-for-full-screen-version-1" class="section level4">
+<h4><a href="https://neurogenomics.github.io/RareDiseasePrioritisation/networks/cardiovascular_hierarchical_network.html">See
+here for full-screen version</a></h4>
+</div>
 </div>
 </div>
 </div>

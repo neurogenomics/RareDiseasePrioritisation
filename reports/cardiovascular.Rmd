@@ -10,7 +10,8 @@ output:
 ---
  
 
-Search results for anything cardiovascular-related, either at the level of phenotype or disease.
+Search results for anything cardiovascular-related, 
+either at the level of phenotype or disease.
 
 # Import results 
 
@@ -55,14 +56,26 @@ targets <- MultiEWCE::prioritise_targets(results = res,
 
 ## Visualise targets
 
+### Default layout
+
 ```{r, fig.height=8, fig.width=8, results='asis'}
 vn <- MultiEWCE::prioritise_targets_network(top_targets = targets$top_targets,
-                                            submain = "Cardiovascular targets network",
+                                            submain = "Cardiovascular targets network", 
                                             save_path = here::here("networks/cardiovascular_network.html"))
 ```
 
- 
 #### [See here for full-screen version](https://neurogenomics.github.io/RareDiseasePrioritisation/networks/cardiovascular_network.html)
+
+### Hierarchical layout
+
+```{r}
+vn <- MultiEWCE::prioritise_targets_network(top_targets = targets$top_targets,
+                                            submain = "Cardiovascular targets network",
+                                            layout = "layout_with_sugiyama",
+                                            save_path = here::here("networks/cardiovascular_hierarchical_network.html"))
+```
+
+#### [See here for full-screen version](https://neurogenomics.github.io/RareDiseasePrioritisation/networks/cardiovascular_hierarchical_network.html)
 
 # Session info 
 
