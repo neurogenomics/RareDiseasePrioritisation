@@ -19,6 +19,7 @@ Trying to have another look through our results for anything neurodegeneration-r
 res <- MultiEWCE::load_example_results()
 res <- HPOExplorer::add_disease(res)
 annot <- HPOExplorer::load_phenotype_to_genes(3)
+genes <- HPOExplorer::load_phenotype_to_genes(1)
 ```
 
 ## Filter results
@@ -98,6 +99,17 @@ We can lift this filter a bit and look for PD-associated phenotypes that only ap
 pd_specific2 <- pd[HPO_ID %in% names(pd_pheno_freqs)[pd_pheno_freqs<=3+n_pd_terms] ]
 
 MultiEWCE::create_dt(pd_specific2)
+```
+
+## PD network
+
+```{r}
+pd_specific3 <- pd[HPO_ID %in% names(pd_pheno_freqs)[pd_pheno_freqs<=20+n_pd_terms] ]
+pd_targets <- data.table::merge.data.table(pd_specific3,
+                             genes[,-c("Phenotype")],
+                             by.x = c("HPO_ID","DatabaseID"),
+                             by.y = c("HPO_ID","LinkID"))
+pd_vn <- MultiEWCE::prioritise_targets_network(top_targets = pd_targets, mediator_var = list(c(1,2),c(2,3),c(3,4),c(2,4),c(1,4)))
 ```
 
 

@@ -144,6 +144,8 @@ g <- HPOExplorer::load_phenotype_to_genes()
 res <- MultiEWCE::load_example_results("Descartes_All_Results_extras.rds")
 # res <- res[q<0.05]
 symp <- MultiEWCE::load_example_results("gen_overlap.symptoms.rds")
+#### Split IDs apart again ####
+symp[,c("HPO_ID","LinkID"):=data.table::tstrsplit(HPO_ID.LinkID,"\\.")]
 
 
 report <- function(symp,
@@ -164,9 +166,7 @@ First, we remove all tests that had 0 overlap, since we can safely rule those ou
 This still leaves us with >10M results.
 
 ```{r}
-symp <- symp[intersection_size>0]
-#### Split IDs apart again ####
-symp[,c("HPO_ID","LinkID"):=data.table::tstrsplit(HPO_ID.LinkID,"\\.")]
+symp <- symp[intersection_size>0] 
 #### Sort by pval then odds.ratio ####
 data.table::setorderv(symp,c("pval","odds.ratio"), c(1,-1))
 
@@ -222,6 +222,8 @@ piggyback::pb_upload(file = tmp,
 ```R
 cols <- c("pval","odds.ratio","jaccard","qval")
 data.table::setnames(symp,cols, paste0("symptoms.",gsub("\\.","_",cols)))
+symp[,CellType:=EWCE::fix_celltype_names(CellType, make_unique = FALSE)]
+res[,CellType:=EWCE::fix_celltype_names(CellType, make_unique = FALSE)]
 res2 <- data.table::merge.data.table(res,
                                      symp, 
                                      all.x = TRUE,

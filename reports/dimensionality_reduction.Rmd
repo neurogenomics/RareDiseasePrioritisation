@@ -1,0 +1,41 @@
+---
+title: "Rare Disease Celltyping"
+subtitle: "dimensionality reduction"
+author: "<h4>Authors:</h4> Brian M. Schilder, Momoko Otani, Nathan G. Skene"
+date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
+output:
+  prettydoc::html_pretty: 
+    theme: hpstr
+    toc: true
+    highlight: github
+---
+
+
+```{r}
+res <- MultiEWCE::load_example_results()
+```
+
+## Create a phenotype + celltype x disease matrix 
+
+Fill the matrix with p-values from enrichment tests.
+
+```{r}
+res <- res[!is.na(HPO_ID.LinkID),]
+X_dt <- data.table::dcast.data.table(res, 
+                                      formula = "CellType ~ HPO_ID.LinkID", 
+                                      value.var = "p", 
+                                      fun.aggregate = mean, 
+                                      fill = 1)
+X <-  (1 -as.matrix(X_dt[,-1],rownames = X_dt[[1]]) |>
+  methods::as("sparseMatrix"))
+remove(X_dt)
+meta.data <- res[, .SD[1], HPO_ID.LinkID]
+meta.data <- data.frame(meta.data,
+                        row.names = meta.data$HPO_ID.LinkID)
+
+obj <- scNLP::seurat_pipeline(obj = X, 
+                              meta.data = meta.data, 
+                              nfeatures = nrow(X), 
+                              workers = 30)
+```
+

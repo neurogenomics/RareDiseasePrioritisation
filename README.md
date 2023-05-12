@@ -5,7 +5,7 @@ Authors:
 </h4>  
 Momoko Otani, Brian M. Schilder, Nathan G. Skene
 <h4>  
-README updated: <i>Mar-22-2023</i>  
+README updated: <i>Mar-24-2023</i>  
 </h4>
 
 # About
@@ -32,3 +32,5 @@ Schilder.
 ### [dementia/neurodegeneration vs. diabetes/obesity network](https://neurogenomics.github.io/RareDiseasePrioritisation/networks/dementia_diabetes_network.html)
 
 ## [Symptoms](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/symptoms)
+
+## [Differential outcomes](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/differential_outcomes)

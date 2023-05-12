@@ -1,0 +1,73 @@
+---
+title: "Rare Disease Celltyping"
+subtitle: "Cardiovascular"
+author: "Brian M. Schilder"
+date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
+output: 
+  rmarkdown::html_document:
+    toc: true
+    toc_float: true
+---
+ 
+
+Search results for anything cardiovascular-related, either at the level of phenotype or disease.
+
+# Import results 
+
+```{r}
+res <- MultiEWCE::load_example_results()
+res <- HPOExplorer:::annotate_phenos(phenos = res, 
+                                     add_disease_data = TRUE, 
+                                     add_hoverboxes = FALSE)
+annot <- HPOExplorer::load_phenotype_to_genes(3)
+genes <- HPOExplorer::load_phenotype_to_genes(1)
+```
+
+## Filter results
+
+First, we do some initial filtering of the results to only get significant associations.
+
+```{r}
+res <- res[q<0.05 & symptom.pval<0.05,]
+query <- c("cardio","heart")
+res <- res[grepl(paste(query,collapse = "|"),definition,ignore.case = TRUE) |
+             grepl(paste(query,collapse = "|"),DiseaseName,ignore.case = TRUE) |
+             grepl(paste(query,collapse = "|"),ancestor_name,ignore.case = TRUE),]
+
+message(length(unique(res$DatabaseID))," diseases.")
+message(length(unique(res$HPO_ID))," phenotypes.")
+message(length(unique(res$HPO_ID.LinkID))," symptoms")
+message(length(unique(res$G))," genes")
+```
+
+## Prioritise targets 
+
+```{r}
+targets <- MultiEWCE::prioritise_targets(results = res, 
+                                         keep_tiers = NULL,  
+                                         severity_threshold = NULL,
+                                         keep_onsets = NULL,
+                                         keep_deaths = NULL,
+                                         keep_celltypes = NULL, 
+                                         symptom_p_threshold = 0.05,
+                                         keep_evidence = 6)
+```
+
+## Visualise targets
+
+```{r, fig.height=8, fig.width=8, results='asis'}
+vn <- MultiEWCE::prioritise_targets_network(top_targets = targets$top_targets,
+                                            submain = "Cardiovascular targets network",
+                                            save_path = here::here("networks/cardiovascular_network.html"))
+```
+
+ 
+#### [See here for full-screen version](https://neurogenomics.github.io/RareDiseasePrioritisation/networks/cardiovascular_network.html)
+
+# Session info 
+
+<details>
+```{r}
+sessionInfo()
+```
+</details>
