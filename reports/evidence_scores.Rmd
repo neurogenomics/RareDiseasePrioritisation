@@ -1,0 +1,115 @@
+---
+title: "Rare Disease Celltyping"
+subtitle: "evidence_scores"
+author: "Brian M. Schilder"
+date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
+output: 
+  rmarkdown::html_document:
+    toc: true
+    toc_float: true
+---
+ 
+
+Test for a relationship between cell-type specificity of gene expression vs.
+GenCC gene-disease evidence scores.
+
+# Phenotype-level
+
+## Annotate
+
+```{r} 
+res <- MultiEWCE::load_example_results("Descartes_All_Results_extras.rds")
+res <- HPOExplorer::add_genes(res, allow.cartesion = TRUE)
+res <- HPOExplorer::add_evidence(phenos = res)
+ctd_out <- MultiEWCE::add_ctd(results = res)
+res <- ctd_out$results
+```
+
+## Aggregate 
+
+```{r} 
+df <- res[,list(specificity=mean(specificity),
+          mean_exp=mean(mean_exp),
+          evidence_score_min=mean(evidence_score_min),
+          evidence_score_mean=mean(evidence_score_mean),
+          evidence_score_max=mean(evidence_score_max)),
+    by=c("HPO_ID","CellType")]
+```
+
+## Correlate
+
+```{r}
+cor(df$evidence_score_mean,
+    df$mean_exp)
+
+cor(df$evidence_score_mean,
+    df$specificity) 
+```
+
+## Plot
+
+```{r}
+library(ggplot2) 
+ggplot(df, aes(x=log(evidence_score_mean),y =log(specificity))) +
+  geom_point(alpha=.1) +
+  # geom_density2d_filled(adjust=.5) +
+  geom_smooth()
+```
+
+
+# Disease-level
+
+
+## Annotate
+
+*WARNING*: The results contains >68M rows, which compounds when add gene annotations.
+
+```{r} 
+res <- MultiEWCE::load_example_results("Descartes_All_Results_extras.symptoms.full_join.rds")
+res <- HPOExplorer::phenos_to_granges(phenos = res,
+                                      as_datatable = TRUE)
+# res <- HPOExplorer::add_genes(res, allow.cartesion = T)
+res <- HPOExplorer::add_evidence(phenos = res)
+ctd_out <- MultiEWCE::add_ctd(results = res)
+res <- ctd_out$results
+```
+
+## Aggregate 
+
+```{r} 
+df <- res[,list(specificity=mean(specificity),
+          mean_exp=mean(mean_exp),
+          evidence_score_min=mean(evidence_score_min),
+          evidence_score_mean=mean(evidence_score_mean),
+          evidence_score_max=mean(evidence_score_max)),
+    by=c("HPO_ID","CellType")]
+```
+
+## Correlate
+
+```{r}
+cor(df$evidence_score_mean,
+    df$mean_exp)
+
+cor(df$evidence_score_mean,
+    df$specificity) 
+```
+
+## Plot
+
+```{r}
+library(ggplot2) 
+ggplot(df, aes(x=log(evidence_score_mean),y =log(specificity))) +
+  geom_point(alpha=.1) +
+  # geom_density2d_filled(adjust=.5) +
+  geom_smooth()
+```
+
+
+# Session info 
+
+<details>
+```{r}
+sessionInfo()
+```
+</details>

@@ -38,8 +38,18 @@ res <- res[grepl(paste(query,collapse = "|"),definition,ignore.case = TRUE) |
 message(length(unique(res$DatabaseID))," diseases.")
 message(length(unique(res$HPO_ID))," phenotypes.")
 message(length(unique(res$HPO_ID.LinkID))," symptoms")
-message(length(unique(res$G))," genes")
+# message(length(unique(res$G))," genes")
 ```
+
+```{r}
+map <- MultiEWCE:::get_data("DescartesHuman_celltype_mapping.csv")
+map[,celltype:=EWCE::fix_celltype_names(celltype,make_unique = FALSE)]
+
+ct <- MultiEWCE::terminal_celltypes()
+ct[CellType %in% map[tissue=="Heart"]$celltype] 
+heart_specific_cells <- map[tissue=="Heart" & !celltype %in% map[tissue!="Heart"]$celltype]
+```
+
 
 ## Prioritise targets 
 
@@ -51,7 +61,7 @@ targets <- MultiEWCE::prioritise_targets(results = res,
                                          keep_deaths = NULL,
                                          keep_celltypes = NULL, 
                                          symptom_p_threshold = 0.05,
-                                         keep_evidence = 6)
+                                         keep_evidence = 6) 
 ```
 
 ## Visualise targets
