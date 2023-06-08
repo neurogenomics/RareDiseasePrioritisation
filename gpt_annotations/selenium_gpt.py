@@ -26,10 +26,6 @@ password_input = driver.find_element(By.XPATH, '//*[@id="password"]/div[1]/div/d
 password_input.send_keys('microglia')
 password_input.send_keys(Keys.RETURN)
 
-#option 2, select existing account 
-email_input = driver.find_element(By.XPATH, '//*[@id="view_container"]/div/div/div[2]/div/div[1]/div/form/span/section/div/div/div/div/ul/li[1]/div/div[1]/div/div[2]/div[2]')
-email_input.click()
-
 # chatGPT "this is a free research preview" 
 next1_btn = driver.find_element(By.XPATH, '//*[@id="radix-:r8:"]/div/div/div[4]/button')
 next1_btn.click()
@@ -42,37 +38,64 @@ done_btn.click()
 gpt4 = driver.find_element(By.XPATH, '//*[@id="radix-:ri:"]/div') 
 gpt4.click()
 
-# send prompts 
+# get prompts 
 import pandas as pd 
 prompts_df = pd.read_csv('~/Documents/gpt_prompts.csv') 
 prompts = prompts_df['prompt'].tolist() 
 
+# Check if a results file already exists 
+previous_outputs_file = '/Users/catherine_murphy/Documents/gpt_hpo_annotations_scale.csv'
+previous_outputs_exist = os.path.isfile(previous_outputs_file)
 
-outputs_df = pd.DataFrame()  # Create an empty DataFrame for the combined output
+# Create an empty DataFrame for outputs
+outputs_df = pd.DataFrame()  
 
-for prompt in prompts:
-    # Locate the input box and submit button
-    input_box = driver.find_element(By.XPATH,'//*[@id="__next"]/div[2]/div[2]/div/main/div[3]/form/div/div[2]/textarea')  
-    submit_button = driver.find_element(By.XPATH, '//*[@id="__next"]/div[2]/div[2]/div/main/div[3]/form/div/div[2]/button')
-    # Send the prompt to the input box and click the submit button
-    input_box.clear()
-    input_box.send_keys(prompt)
-    submit_button.click()
-    # Wait for the response
-    time.sleep(120)  # You can adjust this depending on the response time
+# Counter variables for prompts
+prompt_counter = 0
 
-    response_box_pattern = '//*[@id="__next"]/div[2]/div[2]/div/main/div[2]/div/div/div/div[{}]/div/div[2]/div[1]/div/div/pre/div/div[2]/code'
-    response_boxes = driver.find_elements(By.XPATH, response_box_pattern.format('*'))
+if previous_outputs_exist:
+    # Load the previous outputs_df from the results file
+    outputs_df = pd.read_csv(previous_outputs_file)
+    
+    # Calculate the total number of prompts used so far
+    prompt_counter = len(outputs_df)//2 + 1
 
-    for response_box in response_boxes:
-        output_code = response_box.text
-        
-        try:
-            exec(output_code)
-            output = "Code executed successfully."
-        except Exception as e:
-            output = f"Code execution error: {str(e)}"
-        
-        if isinstance(df, pd.DataFrame):
-            outputs_df = pd.concat([outputs_df, df], ignore_index=True)  # Concatenate the current DataFrame
-        
+num_iterations = 25
+
+while True:
+    for _ in range(num_iterations):
+        for prompt in prompts[prompt_counter:]:
+            # Locate the input box and submit button
+            input_box = driver.find_element(By.XPATH, '/html/body/div[1]/div[2]/div[2]/div/main/div[3]/form/div/div/textarea')
+            submit_button = driver.find_element(By.XPATH, '/html/body/div[1]/div[2]/div[2]/div/main/div[3]/form/div/div/button')
+            
+            # Send the prompt to the input box and click the submit button
+            input_box.clear()
+            input_box.send_keys(prompt)
+            submit_button.click()
+            
+            # Wait for the response
+            time.sleep(432)  # I set this to ~7 minutes so that only 25 prompts are sent every 3 hours (chat gpt 4 limit)
+            
+            response_box_pattern = '/html/body/div[1]/div[2]/div[2]/div/main/div[2]/div/div/div/div[{}]/div/div[2]/div[1]/div/div/pre/div/div[2]/code'
+            response_boxes = driver.find_elements(By.XPATH, response_box_pattern.format('*'))
+
+
+            for response_box in response_boxes:
+                output_code = response_box.text
+                
+                try:
+                    exec(output_code)
+                    output = "Code executed successfully."
+                except Exception as e:
+                    output = f"Code execution error: {str(e)}"
+                
+                if isinstance(df, pd.DataFrame):
+                    outputs_df = pd.concat([outputs_df, df], ignore_index=True)
+                    # concatenate data frame based on column names rather than order 
+                    # outputs_df = outputs_df.join(df.set_index(outputs_df.columns), on=outputs_df.columns, rsuffix='_')
+
+                    unique_df = outputs_df.drop_duplicates()
+                    
+                    # Save the concatenated DataFrame as a CSV file
+                    unique_df.to_csv('/Users/catherine_murphy/Documents/gpt_hpo_annotations_scale.csv', index=False)
