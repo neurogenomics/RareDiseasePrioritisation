@@ -4,8 +4,8 @@
 all_res <- MultiEWCE::load_example_results()
 phenos <- data.frame(Phenotype=unique(all_res$Phenotype))
 
-# we're inputting 3 phenotypes per prompt
-batch_size = 3
+# we're inputting 2 phenotypes per prompt
+batch_size = 2
 
 n_terms <- nrow(phenos)
 batches <- split(seq_len(n_terms), 
@@ -34,10 +34,11 @@ prep_prompt <- function(x){
   question <- paste("I need to annotate phenotypes as to whether they typically cause:", 
                    effects, 
                    "Do they have congenital onset?",
-                   "You must give one-word yes or no answers.",
+                   "To answer, use a severity scale of: never, rarely, often, always.",
                    "Do not consider indirect effects.",
                    "You must provide the output in python code as a data frame called df with columns:",
                    table_columns, 
+                    "Also add justification columns for each outcome.",
                    "These are the phenotypes:", 
                    terms)
   question <- gsub("\n", "", question)
