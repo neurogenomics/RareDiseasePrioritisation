@@ -38,7 +38,7 @@ prep_prompt <- function(x){
                    "Do not consider indirect effects.",
                    "You must provide the output in python code as a data frame called df with columns:",
                    table_columns, 
-                    "Also add justification columns for each outcome.",
+                    "Also add a justification column for each outcome, e.g. death, death_justification.",
                    "These are the phenotypes:", 
                    terms)
   question <- gsub("\n", "", question)
