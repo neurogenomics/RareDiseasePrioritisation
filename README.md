@@ -5,7 +5,7 @@ Authors:
 </h4>  
 Momoko Otani, Brian M. Schilder, Nathan G. Skene
 <h4>  
-README updated: <i>Mar-24-2023</i>  
+README updated: <i>Aug-25-2023</i>  
 </h4>
 
 # About
@@ -31,6 +31,14 @@ Schilder.
 
 ### [dementia/neurodegeneration vs. diabetes/obesity network](https://neurogenomics.github.io/RareDiseasePrioritisation/networks/dementia_diabetes_network.html)
 
+## [Cardiovascular](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/cardiovascular.html)
+
+### [Default network](https://neurogenomics.github.io/RareDiseasePrioritisation/networks/cardiovascular_network.html)
+
+### [Hierarchical network](https://neurogenomics.github.io/RareDiseasePrioritisation/networks/cardiovascular_hierarchical_network.html)
+
 ## [Symptoms](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/symptoms)
 
 ## [Differential outcomes](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/differential_outcomes)
+
+## [GPT annotations](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/gpt_annotations)
