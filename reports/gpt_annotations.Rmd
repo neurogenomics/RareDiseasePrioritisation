@@ -139,26 +139,34 @@ The
 plts <- HPOExplorer::gpt_annot_plot(annot = annot)
 ```
 
-## Heatmap: top 50 most severe phenotypes
+## Heatmap
+
+Top 50 most severe phenotypes.
 
 ```{r, fig.height=8, fig.width=8}
 plts$gp0
 ```
 
-## Barplot: proportion reponses
+## Barplot
+
+Proportion reponses per annotation column.
 
 ```{r}
 plts$gp1
 ```
 
 
-## Boxplots: responses vs. severity scores
+## Boxplots
+
+Responses vs. severity scores.
 
 ```{r, fig.width=8}
 plts$gp2
 ```
 
-## Histograms: Severity score distributions by HPO branch
+## Histograms
+
+Severity score distributions by HPO branch.
 
 Let's look at the distribution of GPT severity scores across all phenotypes,
 grouped by which branch of the HPO those phenotypes belong to.
