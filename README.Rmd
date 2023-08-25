@@ -29,4 +29,5 @@ Thesis project by Momoko Otani, supervised by Nathan Skene and Brian Schilder.
 
 ## [Symptoms](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/symptoms)
 ## [Differential outcomes](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/differential_outcomes)
+## [GPT annotations](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/gpt_annotations)
 

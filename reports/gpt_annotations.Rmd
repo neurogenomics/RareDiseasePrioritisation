@@ -1,0 +1,179 @@
+---
+title: "Rare Disease Celltyping"
+subtitle: "GPT phenotype annotations"
+author: "<h4>Authors:</h4> Brian M. Schilder"
+date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
+output: 
+  rmarkdown::html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+---
+
+```{r setup, dpi=300}
+
+```
+
+# Import annotations
+
+We have stored the GPT-generated annotations on GitHub Releases, 
+and distribute them via the `gpt_annot_read` function.
+
+```{r}
+annot <- HPOExplorer::gpt_annot_read()
+knitr::kable(head(annot))
+```
+
+# Validate
+
+We can identify true positives by identifying phenotypes 
+that fall within specific branches HPO that would guarantee them 
+to have at least a "often" as a response. 
+For example, blindness phenotypes should often be associated with blindness.
+
+You can modify the searches with the `search_hpo` function.
+
+```{r}
+query_hits <- HPOExplorer::search_hpo()
+lapply(query_hits,head)
+```
+```{r}
+checks <- HPOExplorer::gpt_annot_check(annot = annot, 
+                                       query_hits = query_hits)
+```
+
+## Check consistency
+
+When there's >1 set of annotations for a given phenotype,
+how consistent are they? (0-1 scale).
+
+```{r}
+sort(unlist(checks$annot_consist))
+``` 
+
+
+
+## Checkable rate 
+
+What proportion of annotated phenotypes can be validated (per annotation column)?
+
+```{r}
+sort(checks$checkable_rate)
+```
+What is the absolute number of phenotypes that can be validated (per annotation column)?
+
+```{r}
+sort(checks$checkable_count)
+```
+
+## True positive rate
+
+For the phenotypes that can be validated, how many of them have the 
+expected values (per annotation column).
+
+```{r}
+sort(checks$true_pos_rate)
+```
+
+# Codify severity
+
+The `gpt_annot_codify` function performs a series of steps to 
+clean, filter, and quantify the responses.
+
+```{r}
+coded <- HPOExplorer::gpt_annot_codify(annot = annot)
+```
+
+First, it codifies each response from 0-4:
+```r
+code_dict = c(
+               "never"=0,
+               "rarely"=1,
+               "varies"=2,
+               "often"=3,
+               "always"=4
+             )
+                            
+```
+
+Then it multiplies those response values by the severity of their 
+respective annotation column. This captures the facts that some annotations
+have more serious consequences than others (e.g death >> reduced_fertility).
+
+```r
+ tiers_dict = list(
+                   intellectual_disability=1,
+                   death=1,
+                   impaired_mobility=2,
+                   physical_malformations=2,
+                   blindness=3,
+                   sensory_impairments=3,
+                   immunodeficiency=3,
+                   cancer=3,
+                   reduced_fertility=4
+                 )
+
+```
+
+Next, it takes the multiplied values across all columns and 
+computes an average score per phenotypes.
+This is then normalised by the theoretical maximum severity score, so that
+all phenotypes are on a 0-100 severity scale 
+(where 100 is the most severe phenotype possible).
+This normalised score is added as a new column named "severity_score_gpt".
+
+Finally, the results are sorted by "severity_score_gpt" 
+so that the most severe phenotypes are at the top of the table.
+
+```{r}
+knitr::kable(head(coded$annot_weighted))
+```
+
+
+# Plot
+
+Now let's summarise the annotation results with plots.
+The 
+
+```{r}
+plts <- HPOExplorer::gpt_annot_plot(annot = annot)
+```
+
+## Heatmap: top 50 most severe phenotypes
+
+```{r, fig.height=8, fig.width=8}
+plts$gp0
+```
+
+## Barplot: proportion reponses
+
+```{r}
+plts$gp1
+```
+
+
+## Boxplots: responses vs. severity scores
+
+```{r, fig.width=8}
+plts$gp2
+```
+
+## Histograms: Severity score distributions by HPO branch
+
+Let's look at the distribution of GPT severity scores across all phenotypes,
+grouped by which branch of the HPO those phenotypes belong to.
+
+In red, we show the mean severity score per HPO branch.
+
+```{r, fig.height=9, fig.width=10}
+plts$gp3
+```
+
+# Session info
+
+<details>
+```{r}
+utils::sessionInfo()
+```
+</details>
+<hr>
