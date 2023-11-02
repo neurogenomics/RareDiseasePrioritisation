@@ -18,6 +18,7 @@ Trying to have another look through our results for anything neurodegeneration-r
 ```{r}
 res <- MultiEWCE::load_example_results()
 res <- HPOExplorer::add_disease(res)
+res <- HPOExplorer::add_ancestor(res)
 annot <- HPOExplorer::load_phenotype_to_genes(3)
 genes <- HPOExplorer::load_phenotype_to_genes(1)
 ```
@@ -27,7 +28,7 @@ genes <- HPOExplorer::load_phenotype_to_genes(1)
 First, we do some initial filtering of the results to only get significant associations.
 
 ```{r}
-res <- res[q<0.05 & symptoms.pval<0.05,]
+res <- res[q<0.05 & symptom.pval<0.05,]
 ```
 
 
@@ -37,7 +38,7 @@ AD is not enriched for any phenotype, likely due to the small number of genes in
 https://hpo.jax.org/app/browse/term/HP:0002511
 
 ```{r}
-ad <- res[grepl("alzheimer",Phenotype,ignore.case = TRUE)]
+ad <- res[grepl("alzheimer",hpo_name,ignore.case = TRUE)]
 nrow(ad) 
 ```
 
@@ -52,7 +53,7 @@ We actually do have 1 sig phenotype here: "Parkinsonism"
 
 ```{r}
 pd_phenos <- HPOExplorer::make_phenos_dataframe(ancestor="Parkinsonism")
-pd1 <- res[HPO_ID %in% pd_phenos$HPO_ID ]
+pd1 <- res[hpo_id %in% pd_phenos$hpo_id ]
 
 MultiEWCE::create_dt(pd1)
 ```
@@ -68,8 +69,8 @@ This gives us lots of phenotypes, but many of them are not specific to PD: e.g.
 *Urinary urgency*
 
 ```{r}
-d <- annot[grepl("parkinson",DiseaseName, ignore.case = TRUE)]
-pd <- res[HPO_ID %in% d$HPO_ID] 
+d <- annot[grepl("parkinson",disease_name, ignore.case = TRUE)]
+pd <- res[hpo_id %in% d$hpo_id] 
 nrow(pd)
 ```
 
@@ -81,10 +82,10 @@ Thus, they must be PD-specific.
 That leaves us with just 2 phenotypes.
 
 ```{r}
-n_pd_terms <- length(unique(pd_phenos$HPO_ID))
-pd_pheno_freqs <- sort(table(annot[HPO_ID %in% d$HPO_ID]$HPO_ID))
+n_pd_terms <- length(unique(pd_phenos$hpo_id))
+pd_pheno_freqs <- sort(table(annot[hpo_id %in% d$hpo_id]$hpo_id))
 hist(pd_pheno_freqs, 50)
-pd_specific <- pd[HPO_ID %in% names(pd_pheno_freqs)[pd_pheno_freqs<=1+n_pd_terms]]
+pd_specific <- pd[hpo_id %in% names(pd_pheno_freqs)[pd_pheno_freqs<=1+n_pd_terms]]
 
 MultiEWCE::create_dt(pd_specific)
 ```
@@ -96,7 +97,7 @@ We can lift this filter a bit and look for PD-associated phenotypes that only ap
 *"Abnormal CSF protein level* 
 
 ```{r} 
-pd_specific2 <- pd[HPO_ID %in% names(pd_pheno_freqs)[pd_pheno_freqs<=3+n_pd_terms] ]
+pd_specific2 <- pd[hpo_id %in% names(pd_pheno_freqs)[pd_pheno_freqs<=3+n_pd_terms] ]
 
 MultiEWCE::create_dt(pd_specific2)
 ```
@@ -104,12 +105,12 @@ MultiEWCE::create_dt(pd_specific2)
 ## PD network
 
 ```{r}
-pd_specific3 <- pd[HPO_ID %in% names(pd_pheno_freqs)[pd_pheno_freqs<=20+n_pd_terms] ]
+pd_specific3 <- pd[hpo_id %in% names(pd_pheno_freqs)[pd_pheno_freqs<=20+n_pd_terms] ]
 pd_targets <- data.table::merge.data.table(pd_specific3,
-                             genes[,-c("Phenotype")],
-                             by.x = c("HPO_ID","DatabaseID"),
-                             by.y = c("HPO_ID","LinkID"))
-pd_vn <- MultiEWCE::prioritise_targets_network(top_targets = pd_targets, mediator_var = list(c(1,2),c(2,3),c(3,4),c(2,4),c(1,4)))
+                             genes[,-c("hpo_name")],
+                             by= c("hpo_id","disease_id"))
+pd_vn <- MultiEWCE::prioritise_targets_network(top_targets = pd_targets, 
+                                               mediator_var = list(c(1,2),c(2,3),c(3,4),c(2,4),c(1,4)))
 ```
 
 
@@ -122,7 +123,7 @@ As we've seen before, only the higher-level term "Mental deterioration" remains 
 
 ```{r}
 phenos <- HPOExplorer::make_phenos_dataframe(ancestor="Mental deterioration")
-md <- res[HPO_ID %in% phenos$HPO_ID]
+md <- res[hpo_id %in% phenos$hpo_id]
 
 MultiEWCE::create_dt(md)
 ```
@@ -138,7 +139,7 @@ that fall under that branch:
 ```{r}
 phenos <- HPOExplorer::make_phenos_dataframe(ancestor="Atrophy/Degeneration affecting the central nervous system")
 
-at <- res[HPO_ID %in% phenos$HPO_ID]
+at <- res[hpo_id %in% phenos$hpo_id]
 MultiEWCE::create_dt(at)
 ```
 
@@ -159,9 +160,9 @@ phenos <- rbind(
   HPOExplorer::make_phenos_dataframe(ancestor="Diabetes mellitus"),
   HPOExplorer::make_phenos_dataframe(ancestor="Obesity")
 )
-res_inter <- res[grepl(queries,Phenotype,ignore.case = TRUE) | 
-                 grepl(queries,DiseaseName,ignore.case = TRUE) |
-                   HPO_ID %in% phenos$HPO_ID] 
+res_inter <- res[grepl(queries,hpo_name,ignore.case = TRUE) | 
+                 grepl(queries,disease_name,ignore.case = TRUE) |
+                   hpo_id %in% phenos$hpo_id] 
 
 message(formatC(nrow(res_inter),big.mark = ",")," results remain.")
 ```
@@ -195,6 +196,34 @@ vn$plot
 ```
 
 #### [See here for full-screen version](https://neurogenomics.github.io/RareDiseasePrioritisation/networks/dementia_diabetes_network.html)
+
+
+# Abnormality of the nervous system
+
+Let's prioritise therapeutics targets for phenotypes that fall within the
+broader "abnormality of the nervous system" HPO branch.
+```{r}
+res_nerv <- MultiEWCE::prioritise_targets(results = res[ancestor_name=="Abnormality of the nervous system"],
+                                          fold_threshold=2,
+                                          keep_ont_levels=seq(5),
+                                          keep_tiers = NULL,
+                                          severity_threshold = NULL,
+                                          keep_onsets = NULL, 
+                                          keep_deaths = NULL,
+                                          pheno_ndiseases_threshold = NULL,
+                                          symptom_p_threshold = NULL, 
+                                          symptom_intersection_size_threshold = 2, 
+                                          group_vars = c("hpo_id"),
+                                          top_n=1)
+annot <- HPOExplorer::gpt_annot_codify()
+targets <- merge(res_nerv$top_targets,
+                 annot$annot_weighted[,-c("hpo_name")],
+                 by="hpo_id") |> 
+  data.table::setorderv(c("severity_score_gpt","fold_change"),
+                        c(-1,-1)) 
+MultiEWCE::create_dt(targets)
+```
+
 
 # Session info 
 
