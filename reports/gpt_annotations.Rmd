@@ -139,6 +139,16 @@ The
 plts <- HPOExplorer::gpt_annot_plot(annot = annot)
 ```
 
+## Raw data
+
+```{r}
+knitr::kable(head(plts$data$dat1))
+downloadthis::download_this(.data = plts$data$res_coded$annot_weighted, 
+                            output_name = "gpt_annot_plot_data",
+                            csv2 = FALSE)
+```
+
+
 ## Heatmap
 
 Top 50 most severe phenotypes.
