@@ -127,6 +127,9 @@ so that the most severe phenotypes are at the top of the table.
 
 ```{r}
 knitr::kable(head(coded$annot_weighted))
+downloadthis::download_this(.data = coded$annot_weighted, 
+                            output_name = "gpt_annot_plot_data",
+                            csv2 = FALSE)
 ```
 
 
@@ -143,9 +146,6 @@ plts <- HPOExplorer::gpt_annot_plot(annot = annot)
 
 ```{r}
 knitr::kable(head(plts$data$dat1))
-downloadthis::download_this(.data = plts$data$res_coded$annot_weighted, 
-                            output_name = "gpt_annot_plot_data",
-                            csv2 = FALSE)
 ```
 
 
