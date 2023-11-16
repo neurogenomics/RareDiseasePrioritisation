@@ -1,0 +1,132 @@
+---
+title: "Rare Disease Celltyping"
+subtitle: "Orphanet prevalence data"
+author: "Brian M. Schilder"
+date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
+output: html_document
+---
+
+# Assessing Orphanet data
+
+Orphanet provides [epidemiological prevalence data](https://www.orphadata.com/epidemiology/) on
+ORPHA concepts (which includes diseases and phenotypes). A
+fter delving into this data, there's some key pieces to note. 
+
+Detailed descriptions of each column in the data can be found [here](https://www.orphadata.com/docs/OrphadataFreeAccessProductsDescription.pdf).
+
+## File formatting
+Orphanet only provides their data in XML format, which is useful for making targeting queries but obnoxiously cumbersome for analyzing the data all at once. Stubbornly, they don't provide any alternative formats and tell user to "convert it yourself". Really not a fan of their approach to this as it limits the usefulness of the data for many people. After quite a bit of troubleshooting, I did this using excel + postprocessing in R.  
+
+
+```{r}
+# New function that imports Excel-converted dataset with some additional postprocessing in R
+d <- HPOExplorer:::get_orphanet_epidemiology(agg_by=NULL)
+```
+
+## Standardising prevalence
+Prevalences are provided with different denominators 
+("1 / 10,000", "1 / 1,000", etc.). To permit comparison, 
+I've parsed the numerators/denominators and then rescaled all prevalences to
+x cases in 100 people.
+
+```{r}
+data.table::as.data.table(
+  sort(table(d$Prevalence.PrevalenceClass.Name),decreasing = TRUE)/nrow(d)*100
+) |> `names<-`(c("PrevalenceClass","Percent"))
+```
+
+
+
+## Prevalence coverage
+
+```{r}
+p <- sum(is.na(d$prevalence))/nrow(d)*100
+```
+Within this dataset, prevalence is "NA" or "unknown" for a substantial portion
+of the dataset (`r round(p,1)``%).
+
+
+```{r}
+p <- length(unique(d[!is.na(prevalence)]$id))
+```
+
+In the end, we have non-missing prevalence data for `r p` unique Orphanet IDs.
+
+## Population
+Usefully, they also provide metadata on the population in which the data was measured (e.g. China, US, worldwide). 
+
+```{r}
+MultiEWCE::create_dt(
+  d[,list(n=.N),by=`Prevalence.PrevalenceGeographic.Name`][order(-n)] 
+)
+```
+
+```{r}
+ww <- d[`Prevalence.PrevalenceGeographic.Name`=="Worldwide",]
+p <- length(unique(ww$id)) / length(unique(d$id))*100
+```
+
+This selection of population affects the interpretation, and `r round(p,1)`% of
+ all concepts have a "worldwide" prevalence count. 
+
+For now, I'm just computing the mean prevalence per concept across all 
+populations in which that concept's prevalence was measured. 
+
+## Prevalence class
+Prevalence is a bit more of a complicated idea than you might initially think,
+and can fall into different classes depending on how you study it.
+See [this publication for a more in depth discussion](https://www.nature.com/articles/s41431-019-0508-0).
+
+See counts of each type below.
+
+```{r}
+data.table::data.table(rev(sort(table(d$Prevalence.PrevalenceType.Name))))
+```
+
+## ID mapping
+A non-trivial aspect of using any of these non-HPO-based datasets is mapping IDs from one ontology to another. Currently, there is no easy way to do this (while avoiding missing data). 
+
+The best strategy I've come up with for Orphanet is to first map all Orphanet IDs to MONDO IDs with `HPOExplorer:::mondo_dict`. This function uses cross-ontology referencing from the MONDO ontology object. Then I do the same for the HPO disease IDs (which are a mix of Orphanet, OMIM, and DECIPHER IDs). This allows me to have a common ID framework (MONDO) to match up the two different datasets.
+
+```{r}
+### Get all disease and phenotype data from the HPO
+phenos <- HPOExplorer::make_phenos_dataframe(add_disease_data = TRUE)
+```
+
+Using this strategy, I'm able to map:
+- 100% of Orphanet IDs
+- 99.7% of disease IDs in the HPO data
+- 11.7% of phenotype IDs in the HPO data
+
+## Phenotype frequency vs. disease frequency
+A decision point we'll need to consider is whether we'd ultimately like to filter prioritised targets based on:
+1. disease (disease_id) frequency 
+2. phenotype (hpo_id) frequency
+
+Both "disease_id" and "hpo_id" can be mapped onto MONDO IDs, and thus merged with the Orphanet frequency data. Depending on how we do this merge, we get quite different results.
+
+
+### Merge by Phenotype
+```{r}
+phenos2 <- HPOExplorer::add_prevalence(phenos = phenos, 
+                                       id_col = "hpo_id")
+```
+### Merge by Disease
+
+```{r}
+phenos3 <- HPOExplorer::add_prevalence(phenos = phenos, 
+                                       id_col = "disease_id")
+```
+
+
+ 
+
+# Session info
+
+<details>
+```{r}
+sessionInfo()
+```
+</details>
+<hr>
+ 
