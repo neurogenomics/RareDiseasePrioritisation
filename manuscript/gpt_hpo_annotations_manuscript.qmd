@@ -1,0 +1,42 @@
+---
+title: "Harnessing AI to gain insight into human phenotypes: a comprehensive annotation and exploration of the Human Phenotype Ontology "
+---
+
+### Notes
+
+-   Short report introducing our chatGPT generated HPO phenotype annotations
+-   Web app? Figures to show distribution of annotations e.g. x number of phenotypes never/rarely/often/always cause death, intellectual disability, reduced fertility etc
+-   Most recent HPO paper: https://academic.oup.com/nar/article/49/D1/D1207/6017351
+
+### Abstract
+
+Comprehensive annotation of phenotypic abnormalities is invaluable for defining, diagnosing, prognosing, and treating human disease. Since 2008, the Human Phenotype Ontology has served this purpose, by providing a systematically and logically organised database for the description and analysis of human phenotypes. Through developing open community resources, the depth and breadth of the HPO has continued to expand and there are now x phenotypic abnormalities, corresponding to y rare diseases, documented. 
+
+### Introduction
+
+### Results
+
+### Methods
+
+### Discussion
+
+### Data availability
+
+### Code availability
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
