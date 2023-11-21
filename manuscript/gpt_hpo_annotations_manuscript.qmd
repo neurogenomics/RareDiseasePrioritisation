@@ -10,7 +10,7 @@ title: "Harnessing AI to gain insight into human phenotypes: a comprehensive ann
 
 ### Abstract
 
-Comprehensive annotation of phenotypic abnormalities is invaluable for defining, diagnosing, prognosing, and treating human disease. Since 2008, the Human Phenotype Ontology has served this purpose, by providing a systematically and logically organised database for the description and analysis of human phenotypes. Through developing open community resources, the depth and breadth of the HPO has continued to expand and there are now x phenotypic abnormalities, corresponding to y rare diseases, documented. 
+Comprehensive annotation of phenotypic abnormalities is invaluable for defining, diagnosing, prognosing, and treating human disease. Since 2008, the Human Phenotype Ontology (HPO) has served this purpose, by providing a standardised database for the description and analysis of human phenotypes. Through developing open community resources, the depth and breadth of the HPO has continued to expand and there are now x phenotypic abnormalities, corresponding to y rare diseases, documented. To date, the HPO has largely been manually curated by experts including clinicians, clinical geneticists, and researchers. Although this approach ensures the quality and accuracy of the ontology, it is time-consuming and labor-intensive. As artificial intelligence (AI) capabilities advance, there is an opportunity to integrate natural language processing technologies into assisting in the curation process. 
 
 ### Introduction
 
