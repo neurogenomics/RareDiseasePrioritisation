@@ -24,6 +24,13 @@ annot <- HPOExplorer::gpt_annot_read()
 knitr::kable(head(annot))
 ```
 
+Some phenotype were annotated multiple times, 
+thoughh most were only annotated once:
+```{r}
+table(annot$pheno_count)
+```
+
+
 # Validate
 
 We can identify true positives by identifying phenotypes 
@@ -74,6 +81,15 @@ expected values (per annotation column).
 ```{r}
 sort(checks$true_pos_rate)
 ```
+
+## Summary plot
+
+```{r}
+checks$plot
+```
+
+
+
 
 # Codify severity
 
