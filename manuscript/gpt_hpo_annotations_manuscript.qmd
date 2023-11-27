@@ -1,5 +1,5 @@
 ---
-title: "Harnessing AI to gain insight into human phenotypes: a comprehensive annotation and exploration of the Human Phenotype Ontology "
+title: "Harnessing AI to annotate the severity of all phenotypic abnormalities within the Human Phenotype Ontology"
 ---
 
 ### Notes
@@ -10,13 +10,21 @@ title: "Harnessing AI to gain insight into human phenotypes: a comprehensive ann
 
 ### Abstract
 
-Comprehensive annotation of phenotypic abnormalities is invaluable for defining, diagnosing, prognosing, and treating human disease. Since 2008, the Human Phenotype Ontology (HPO) has served this purpose, by providing a standardised database for the description and analysis of human phenotypes. Through developing open community resources, the depth and breadth of the HPO has continued to expand and there are now x phenotypic abnormalities, corresponding to y rare diseases, documented. To date, the HPO has largely been manually curated by experts including clinicians, clinical geneticists, and researchers. Although this approach ensures the quality and accuracy of the ontology, it is time-consuming and labor-intensive. As artificial intelligence (AI) capabilities advance, there is an opportunity to integrate natural language processing technologies into assisting in the curation process. 
+Comprehensive annotation of phenotypic abnormalities is invaluable for defining, diagnosing, prognosing, and treating human disease. Since 2008, the Human Phenotype Ontology (HPO) has been instrumental to this, by providing a standardised database for the description and analysis of human phenotypes. Through developing open community resources, the depth and breadth of the HPO has continued to expand and there are now x phenotypic abnormalities, corresponding to y rare diseases, described. To date, the HPO has largely been manually curated by experts including clinicians, clinical geneticists, and researchers. Although this approach ensures the quality and accuracy of the ontology, it is time-consuming and labor-intensive. As artificial intelligence (AI) capabilities advance, there is an opportunity to integrate natural language processing technologies into assisting in the curation process. Here, we have used chatGPT to systematically annotate the severity of all 18,057 phenotypic abnormalities within the HPO. We have validated our approach and provide examples of how it can aid in prioritising gene therapy trials for rare diseases. Ultimately, we hope that our resource will be of utility to those working in rare diseases, as well as the wider rare disease community.  
 
 ### Introduction
 
 ### Results
 
 ### Methods
+
+Phenotypic abnormality annotation using OpenAI GPT-4
+We employed the OpenAI GPT-4 model with Python to annotate 18,057 terms within the Human Phenotype Ontology (HPO). Our annotation framework was developed based on previously defined criteria for classifying disease severity [Lazarin et al 2014]. We sought to evaluate the impact of various phenotypes on factors including intellectually disability, death, impairmed mobility, physical malformations, blindness, sensory impairments, immunodeficiency, cancer, reduced fertility, and congenital onset. Through prompt design we found that the performance of GPT-4 improved when we incorporated a scale associated with each effect and required a jsutifcation for each response. For each effect, we inquired about the likelihood of its occurrence - whether it never, rarely, often, or always occurred. Furthermore, our prompt design revealed that the optimal trade-off between the number of annotations and performance was achieved when inputting no more than three phenotypes per prompt.
+
+
+Validation
+
+
 
 ### Discussion
 
