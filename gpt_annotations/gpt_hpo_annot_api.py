@@ -5,7 +5,7 @@ import re
 from IPython.display import display
 
 # Initialize OpenAI client
-client = openai.OpenAI(api_key="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")
+client = openai.OpenAI(api_key="")
 
 # Paths
 input_csv = "~/Documents/gpt_prompts_extra.csv"
