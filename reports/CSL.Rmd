@@ -1,0 +1,291 @@
+---
+title: "Rare Disease Celltyping"
+subtitle: "CSL areas of interest"
+author: "Brian M. Schilder"
+date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
+output: html_document
+---
+
+```{r setup, include=TRUE}
+if(!requireNamespace("MultiEWCE", quietly = TRUE)){
+  remotes::install_github("neurogenomics/MultiEWCE", dependencies = TRUE)
+}
+```
+
+
+# Import data
+
+```{r}
+csl <- data.table::fread("~/Downloads/CSL areas of interest - Sheet1.tsv")
+csl <- csl[Group=="Early Stage Partnering"]
+# extract IDs from the Entry column of csl data.table with the pattern "HP:", "OMIM:", "ORPHA:" and put into a new col
+csl[, ID := stringr::str_extract(Entry, "HP:\\d+|OMIM:\\d+|ORPHA:\\d+")]
+# extract names from Entry column WITHOUT the ID
+csl[, Name := trimws(stringr::str_remove(Entry, "HP:\\d+|OMIM:\\d+|ORPHA:\\d+"))]
+```
+
+Extract IDs of phenotypes and diseases.
+Get any descendants of manually mapped HPO IDs as well.
+
+```{r}
+hpo_ids <- csl[grepl("HP:",ID)]$ID |> unique()
+disease_ids <- csl[!grepl("HP:",ID)]$ID |> unique()
+hpo <- KGExplorer::get_ontology("hp")
+hpo_ids_list <- lapply(stats::setNames(hpo_ids,hpo_ids),
+                       function(x) simona::dag_offspring(dag = hpo, 
+                                                         include_self = TRUE,
+                                                         term = x)) 
+hpo_ids_extended <- unlist(hpo_ids_list) |> unique()
+```
+# Prioritise targets
+
+```{r}
+results <- MultiEWCE::load_example_results(multi_dataset=TRUE)
+# results <- results[hpo_id %in% hpo_ids_extended]
+ctds <- MultiEWCE::load_example_ctd(file=c( "ctd_DescartesHuman.rds",
+                                            "ctd_HumanCellLandscape.rds"),
+                                    multi_dataset = TRUE)
+```
+
+## DescartesHuman
+
+```{r}
+targets <- MultiEWCE::prioritise_targets(results = results[ctd=="DescartesHuman"],
+                                         ctd = ctds$DescartesHuman,
+                                         annotLevel = unique(results[ctd=="DescartesHuman"]$annotLevel),
+                                         keep_tiers = NULL,
+                                         severity_threshold = NULL)
+targets_dh <- targets$top_targets[
+  (hpo_id %in% hpo_ids_extended 
+   | disease_id %in% disease_ids
+   ) 
+]
+length(unique(targets_dh$hpo_id))
+length(unique(targets_dh$disease_id))
+```
+
+
+## Human Cell Lanscape
+
+```{r}
+targets <- MultiEWCE::prioritise_targets(results = results[ctd=="HumanCellLandscape"],
+                                         ctd = ctds$HumanCellLandscape,
+                                         annotLevel = unique(results[ctd=="HumanCellLandscape"]$annotLevel),
+                                         keep_tiers = NULL,
+                                         severity_threshold = NULL)
+targets_hcl <- targets$top_targets[
+  (hpo_id %in% hpo_ids_extended 
+   | disease_id %in% disease_ids
+   )  
+]
+length(unique(targets_hcl$hpo_id))
+length(unique(targets_hcl$disease_id))
+```
+
+## Merge results to find consensus targets 
+
+```{r}
+{
+  # Note: Raising the proportion overlap filter 
+  # can actually increase the total number of results (oddly).
+  thresh <- .75 
+  #### DH ####
+  targets_dh <- MultiEWCE::add_symptom_results(targets_dh, 
+                                               ctd_list = ctds,
+                                               proportion_driver_genes_symptom_threshold = thresh)
+  targets_dh <- MultiEWCE::map_celltype(targets_dh[!is.na(CellType_symptom),],
+                                        input_col = "CellType_symptom")
+  #### HCL ####
+  targets_hcl <- MultiEWCE::add_symptom_results(targets_hcl, 
+                                                ctd_list = ctds,
+                                                proportion_driver_genes_symptom_threshold = thresh)
+  targets_hcl <- MultiEWCE::map_celltype(targets_hcl[!is.na(CellType_symptom),],
+                                        input_col = "CellType_symptom")
+}
+
+{
+  gpt <- HPOExplorer::gpt_annot_codify()
+  gpt_cols <- names(gpt$annot_weighted[,-c("hpo_id","hpo_name")])
+  targets_merged <- data.table::merge.data.table(targets_dh,
+                                                 targets_hcl,
+                                                 by=c("disease_id","disease_name",
+                                                      "ancestor","ancestor_name",
+                                                      "hpo_id","hpo_name",
+                                                      "cl_id","cl_name",
+                                                      "gene_symbol",
+                                                      gpt_cols
+                                                      ),
+                                                 suffixes = c(".dh",".hcl"), 
+                                                 allow.cartesian = TRUE)
+  # targets_merged <- targets_merged[hpo_id %in% hpo_ids]
+  length(unique(targets_merged$disease_id))
+  length(unique(targets_merged$hpo_id))
+  length(unique(targets_merged$cl_name))
+}
+targets_merged_summary <-
+  unique(targets_merged[,c("disease_name",
+                           "ancestor_name",
+                           "hpo_name",
+                           "cl_name",grep("CellType\\.",names(targets_merged),value=TRUE),
+                           "gene_symbol",gpt_cols),
+                        with=FALSE]) |> 
+  data.table::setorderv("severity_score_gpt",-1,na.last = TRUE)
+
+sort(table(as.character(targets_merged_summary$gene_symbol)),decreasing = TRUE)
+sort(table(as.character(targets_merged_summary$cl_name)),decreasing = TRUE)
+  
+```
+
+## Get the top candidates per area of interest
+
+Sort by phenotype severity score and fold change.
+
+```{r}
+targets_merged[,mean_fold_change:=rowMeans(.SD,na.rm=TRUE),
+                .SDcols = c("fold_change.dh","fold_change.hcl")]
+data.table::setorderv(targets_merged,
+                      c("severity_score_gpt","mean_fold_change"),
+                      c(-1,-1), na.last = TRUE)
+```
+
+### Per HPO ancestor
+
+```{r}
+top_targets_ancestor <- targets_merged[severity_score_gpt>10 &
+               mean_fold_change >10 &
+               proportion_driver_genes_symptom.dh>.5 &
+               proportion_driver_genes_symptom.hcl>.5 ,][!duplicated(ancestor_name),]
+```
+
+### Per CSL area of interest
+
+```{r}
+csl_areas <- unique(csl[,c("ID","Area","Subarea")])
+targets_merged2 <- targets_merged |>
+  merge(csl_areas,
+        all.x=TRUE,
+        by.x="hpo_id",by.y="ID") |>
+  merge(csl_areas,
+        all.x=TRUE,
+        by.x="disease_id",by.y="ID")
+targets_merged2[,Area:=data.table::fcoalesce(Area.x,Area.y)]
+targets_merged2[,Subarea:=data.table::fcoalesce(Subarea.x,Subarea.y)]
+
+targets_merged2[,lapply(.SD,data.table::uniqueN),by="Area",.SDcols=c("disease_id","hpo_id")]
+
+top_targets <- targets_merged2[!is.na(Area), head(.SD,1), 
+                               by=c("Area")]
+# drop list columns
+save_path <- here::here("top_targets_CSL.tsv")
+top_targets[,-names(top_targets)[sapply(top_targets,is.list)],with=FALSE] |>
+  data.table::fwrite(save_path, sep="\t")
+
+# top_targets <- data.table::fread(here::here("top_targets_CSL.tsv"))
+```
+# Explore top targets
+
+## Ischemic stroke
+
+Check for other results with the same cell type and gene target.
+```{r}
+### get all genes associated with ischemic stroke 
+p2g <- HPOExplorer::load_phenotype_to_genes()
+p2g <- p2g[hpo_id=="HP:0002140"]
+p2g <- HPOExplorer::add_evidence(p2g)
+genes <- p2g$gene_symbol|> unique()
+#### Add gene specificity ####
+out <- MultiEWCE::add_ctd(p2g,
+                          ctd = ctds$HumanCellLandscape,
+                          keep_specificity_quantiles = seq(20,40),
+                          keep_celltypes = c("Smooth_muscle_cells","Fetus_Smooth_muscle_cell"),
+                          annotLevel = 3,
+                          by="gene_symbol") 
+p2g_ctd <- out$results
+# p2g_ctd <- p2g_ctd[,!duplicated(names(p2g_ctd)),with=FALSE] 
+length(unique(out$results[mean_exp_quantile>30]$gene_symbol))/ length(genes)
+```
+Check which variants cause the phenotype.
+
+```{r}
+cv <- KGExplorer::get_clinvar(annotate = TRUE)
+cv_gene <- cv$data[GeneSymbol=="COL4A1"]
+cv_gene <- cv_gene[grepl("pathogenic",ClinicalSignificance, ignore.case = TRUE) &
+                   !grepl("conflicting",ClinicalSignificance, ignore.case = TRUE),]
+# txt <- paste(paste0("[",c(top_targets[1,]$disease_id,
+#                           top_targets[1,]$hpo_id),"]"),collapse = "|")
+cv_gene <- cv_gene[grepl(top_targets[1,]$disease_id,cv_gene$PhenotypeIDS)|
+                   grepl(top_targets[1,]$hpo_id,cv_gene$PhenotypeIDS),]
+
+length(unique(cv_gene$Name))
+table(cv_gene$Type)
+table(cv_gene$OriginSimple)
+table(cv_gene$ClinicalSignificance)
+table(cv_gene$ClinSigSimple_label)
+
+KGExplorer::plot_clinvar(cv_gene
+                         # by=c("region","Type","ClinicalSignificance"),
+                         # rows = "ClinicalSignificance"
+                         )
+```
+
+## gnomad
+
+https://gnomad.broadinstitute.org/gene/ENSG00000187498?dataset=gnomad_r4
+
+```{r}
+# clinvar <- data.table::fread("~/Downloads/clinvar_result.txt")
+# sort(table(clinvar$`Molecular consequence`))
+gnomad <- data.table::fread("~/Downloads/gnomAD_v4.0.0_ENSG00000187498_2024_02_08_11_13_20.csv",
+                            check.names = TRUE)
+sort(table(gnomad$VEP.Annotation), decreasing = TRUE)
+sort(table(gnomad$ClinVar.Clinical.Significance), decreasing = TRUE)
+
+
+#### Find pathogenic variants with a decently highly allele frequency
+common <- gnomad[grepl("pathogenic",ClinVar.Clinical.Significance,ignore.case = TRUE) &
+                 Allele.Count>1 & 
+                 cadd>20] |>
+  data.table::setorderv("Allele.Frequency",-1)
+
+#### Find exons that can be removed with no effect
+gnomad[VEP.Annotation=="stop_gained" & 
+         grepl("benign",ClinVar.Clinical.Significance,ignore.case = TRUE)]
+
+#### Find splice variants that are benign
+## Then find mutations that fall within the exons that are skipped within the benign splice variants
+splice <- gnomad[VEP.Annotation %in% c("splice_region_variant",
+                             # "intron_variant",
+                             "splice_donor_variant",
+                             "splice_acceptor_variant") & 
+         grepl("benign",ClinVar.Clinical.Significance,ignore.case = TRUE)]
+benign_transcripts <- unique(splice$Transcript)
+
+
+#### Find common splicing variants that cause disease
+splice <- gnomad[VEP.Annotation %in% c("splice_region_variant",
+                             # "intron_variant",
+                             "splice_donor_variant",
+                             "splice_acceptor_variant") & 
+         grepl("pathogenic",ClinVar.Clinical.Significance,ignore.case = TRUE)]
+splice[Allele.Frequency>=0.001]
+
+
+
+
+#### Find variants that are pathogenic in one transcript but benign in another
+dat <- gnomad[grepl("benign|pathogenic",ClinVar.Clinical.Significance,ignore.case = TRUE)]
+### Get the number of times a variant appears
+dat <- dat[,n:=.N,by=c("Position")][n>1][,n_transcripts:=data.table::uniqueN(Transcript),by=c("Position")][]
+
+
+# dat |>
+  # dplyr::group_by(rsIDs) |>
+  # dplyr::filter(length(unique(Transcript))>1)
+# dat[data.table::uniqueN(Transcript)>1, by=c("rsIDs")]
+# dat <- dat[,missense_detected:=grepl("missense",VEP.Annotation,ignore.case = TRUE),by=c("rsIDs")][missense_detected==TRUE,]
+
+dat[,transcripts:=data.table::uniqueN(Transcript),by="Position"][transcripts>1]
+
+
+```
+

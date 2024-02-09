@@ -1,0 +1,111 @@
+---
+title: "Rare Disease Celltyping"
+subtitle: "pLI comparison "
+author: "Brian M. Schilder"
+date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
+output: html_document
+---
+
+```{r setup}
+library(ggplot2)
+library(ggstatsplot)
+```
+
+
+# Import data
+
+## pLI
+
+```{r}
+pli_agg <- MultiEWCE::get_pli()
+```
+
+## AlphaMissense
+
+```{r}
+am <- MultiEWCE::get_alphamissense()
+```
+
+## GenCC
+
+```{r}
+gcc <- HPOExplorer::get_gencc()
+gcc_agg <- gcc[,by=gene_symbol, lapply(.SD, mean, na.rm=TRUE),
+    .SDcols = is.numeric]
+```
+
+## HPO
+
+```{r}
+phenos <- HPOExplorer::load_phenotype_to_genes()
+```
+
+
+## Merged
+
+```{r}
+dat <- data.table::merge.data.table(am$merged,
+                                    pli_agg,by.x="name",by.y="gene") |>
+  data.table::merge.data.table(gcc_agg,by.x="name",by.y="gene_symbol",
+                               all.x = TRUE) |>
+  data.table::setnafill(cols=c("evidence_score_mean"),
+                        fill=0)
+dat[,in_hpo:=name %in% unique(phenos$gene_symbol)]
+```
+
+# Plot
+
+## pLI vs. AlphaMissense
+
+```{r}
+ggstatsplot::ggscatterstats(dat,
+                            x=lof.z_score, 
+                            y=mean_am_pathogenicity)
+```
+
+## pLI vs. GenCC
+
+```{r} 
+# ggplot(dat,aes(x=lof.z_score, y=as.factor(round(evidence_score_mean)))) +
+#   geom_boxplot() + 
+#   theme_bw()
+ggstatsplot::ggscatterstats(dat,
+                            x=lof.z_score, 
+                            y=evidence_score_mean)
+```
+
+## pLI vs. HPO 
+
+```{r}
+ggplot(dat,aes(x=lof.z_score, y=in_hpo)) +
+  # geom_density2d_filled() +
+  # geom_hex() +
+  geom_boxplot() +
+  # geom_smooth(method="loess") +
+  theme_bw()
+```
+
+
+
+
+## AlphaMissense vs. HPO 
+
+```{r}
+ggplot(dat,aes(x=mean_am_pathogenicity, y=in_hpo)) +
+  # geom_density2d_filled() +
+  # geom_hex() +
+  geom_boxplot() +
+  # geom_smooth(method="loess") +
+  theme_bw()
+```
+
+
+# Session info
+
+<details>
+```{r}
+sessionInfo()
+```
+</details>
+<hr>
+ 

@@ -1,0 +1,40 @@
+---
+title: "Rare Disease Celltyping"
+subtitle: "Experimental models"
+author: "Brian M. Schilder"
+date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
+output: html_document
+---
+
+```{r setup}
+library(HPOExplorer)
+library(ggplot2)
+```
+
+
+```{r}
+res <- KGExplorer::map_upheno()
+```
+
+## Phenotype overlap
+
+Summary plot showing the proportion of orthologous genes overlapping between HPO and non-human ontology databases (within a given phenotype), repeated across many phenotypes.
+
+```{r}
+res$plots$rainplot
+```
+
+## Equivalence score vs. Proportion overlap
+
+For all cross-species phenotype mappings, test if there is a relationship between the semantic equivalence score provided by uPheno and the proportion of orthologous genes overlapping with HPO.
+
+```{r}
+res$plots$scatterplot
+```
+
+## Top therapy candidates
+
+```{r, fig.height=20}
+res$plots$heatmap
+```
+
