@@ -31,4 +31,5 @@ Thesis project by Momoko Otani, supervised by Nathan Skene and Brian Schilder.
 ## [Differential outcomes](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/differential_outcomes)
 ## [GPT annotations](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/gpt_annotations)
 ## [Orphanet prevalence data](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/orphanet_prevalence)
+## [CSL Areas of Interest](https://neurogenomics.github.io/RareDiseasePrioritisation/reports/CSL)
 

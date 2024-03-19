@@ -25,6 +25,8 @@ knitr::opts_chunk$set(warning = FALSE,
 
 ### Import CSL areas of interest
 
+CSL areas of interest mapped onto Human Phenotype Ontology (HPO) and/or other disease ontologies (OMIM/ORPH).
+
 ```{r}
 csl <- data.table::fread(here::here("data/CSL_areas_of_interest.tsv"))
 csl <- csl[Group=="Early Stage Partnering"]
@@ -91,6 +93,11 @@ targets <- all_targets[
    | disease_id %in% disease_ids
    ) 
 ]
+MSTExplorer::create_dt(head(targets,100))
+```
+
+Summarise results: 
+```{r, message=TRUE}
 message(paste0(
   length(intersect(all_targets$hpo_id,hpo_ids_extended)),"/",
         length(unique(hpo_ids_extended)),
@@ -99,8 +106,8 @@ message(paste0(
         " CSL phenotypes (across ",length(unique(all_targets$disease_id))," diseases)",
   " covered in our prioritised targets."
 ))
-MSTExplorer::create_dt(head(targets,100))
 ```
+
 
 ### Get the top candidates per area of interest
  
