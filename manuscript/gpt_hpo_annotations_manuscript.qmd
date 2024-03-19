@@ -1,68 +1,253 @@
 ---
-title: "Harnessing AI to annotate the severity of all phenotypic abnormalities within the Human Phenotype Ontology"
+title: "Harnessing AI to annotate the severity of all phenotypic abnormalities within the Human phenotype Ontology"
 ---
 
-### Notes
-
--   Short report introducing our chatGPT generated HPO phenotype annotations
--   Web app? Figures to show distribution of annotations e.g. x number of phenotypes never/rarely/often/always cause death, intellectual disability, reduced fertility etc
--   Most recent HPO paper: https://academic.oup.com/nar/article/49/D1/D1207/6017351
+```{r load_packages}
+#| echo: false
+#| warning: false 
+library(ggplot2)
+library(tidyr)
+library(HPOExplorer)
+library(MultiEWCE)
+library(dplyr)
+library(wesanderson)
+library(data.table)
+```
 
 ### Abstract
 
-<<<<<<< HEAD
-The Human Phenotype Ontology (HPO) has played a crucial role in defining, diagnosing, prognosing, and treating human diseases by providing a standardized database for phenotypic abnormalities. With 18,057 abnormalities now corresponding to over 10,000 rare diseases, manual curation by experts is becoming increasingly labor-intensive and time-consuming. Leveraging advances in artificial intelligence, we employed chatGPT to systematically annotate the severity of all 18,057 phenotypic abnormalities in the HPO. Our validated approach demonstrates the potential for natural language processing technologies to automate the curation process. By defining a severity scale for all phenotypes, our resources aims to assist in achieving important objectives for rare diseases, including improved diagnosis and prioritisation of gene therapy trials. We hope that this will be invaluable to the rare disease community and beyond. 
-=======
-Comprehensive annotation of phenotypic abnormalities is invaluable for defining, diagnosing, prognosing, and treating human disease. Since 2008, the Human Phenotype Ontology (HPO) has been instrumental to this, by providing a standardised database for the description and analysis of human phenotypes. Through developing open community resources, the depth and breadth of the HPO has continued to expand and there are now x phenotypic abnormalities, corresponding to y rare diseases, described. To date, the HPO has largely been manually curated by experts including clinicians, clinical geneticists, and researchers. Although this approach ensures the quality and accuracy of the ontology, it is time-consuming and labor-intensive. As artificial intelligence (AI) capabilities advance, there is an opportunity to integrate natural language processing technologies into assisting in the curation process. Here, we have used chatGPT to systematically annotate the severity of all 18,057 phenotypic abnormalities within the HPO. We have validated our approach and provide examples of how it can aid in prioritising gene therapy trials for rare diseases. Ultimately, we hope that our resource will be of utility to those working in rare diseases, as well as the wider rare disease community.  
->>>>>>> bb3888e542860f13ad812f3359cb5d0716ba6ca7
+The Human phenotype Ontology (HPO) has played a crucial role in defining, diagnosing, prognosing, and treating human diseases by providing a standardized database for phenotypic abnormalities. With 18,057 abnormalities now corresponding to over 10,000 rare diseases, manual curation by experts is becoming increasingly labor-intensive and time-consuming. Leveraging advances in artificial intelligence, we employed the OpenAI GPT-4 model with Python to systematically annotate the severity of \~ 17,000 phenotypic abnormalities in the HPO. Through our validated approach, which ensured that phenotypes with guaranteed outcomes were appropriately annotated, we demonstrated the potential for natural language processing technologies to automate the curation process effectively. For instance, phenotypes such as "decreased male fertility" were used to compute a true positive rate, as they would be expected to be annotated as often, if not always, causing reduced fertility. Across the annotated outcomes, we observed \> 90 % annotation accuracy. Using a novel approach, we developed a severity scoring system that incorporates both the nature of the phenotype outcome and the frequency of its occurrence. Evaluation of the top 50 severe phenotypes revealed insights into the most impactful conditions, such as 'acute necrotizing encephalopathy' and 'abnormality of mucopolysaccharide metabolism'. We anticipate that this comprehensive annotation, will prove invaluable to the rare disease community and beyond.
 
 ### Introduction
 
-Comprehensive annotation of phenotypic abnormalities is invaluable for defining, diagnosing, prognosing, and treating human disease. Since 2008, the Human Phenotype Ontology (HPO) has been instrumental to this, by providing a standardised database for the description and analysis of human phenotypes. Through developing open community resources, the depth and breadth of the HPO has continued to expand and there are now 18,057 phenotypic abnormalities, corresponding to over 10,000 rare diseases, described. In recent years, the HPO has expanded its disease annotations so that each HPO term can have metadata including typical age of onset and frequency. In addition, there are the Clinical modifier (put this in italics) and Clinical course (also italics) subontologies, which contains terms to describe factors including severity and triggers, and mortality and progression, respectively. Describing the severity-related attributes of a disease is crucial for attaining significant objectives in rare diseases. This includes enhancing diagnostic capabilities, increased availibility of information, and prioritising gene therapy trials.
+Comprehensive annotation of phenotypic abnormalities is invaluable for defining, diagnosing, prognosing, and treating human disease. Since 2008, the Human phenotype Ontology (HPO) has been instrumental to this, by providing a standardised database for the description and analysis of human phenotypes. Through developing open community resources, the depth and breadth of the HPO has continued to expand and there are now \>17,000 phenotypic abnormalities, corresponding to \> 10,000 rare diseases, described. In recent years, the HPO has expanded its disease annotations so that each HPO term can have metadata including typical age of onset and frequency. In addition, there are the Clinical modifier (put this in italics) and Clinical course (also italics) subontologies, which contains terms to describe factors including severity and triggers, and mortality and progression, respectively. Describing the severity-related attributes of a disease is crucial for attaining significant objectives in rare diseases. This includes enhancing diagnostic capabilities, as well as prioritising and guiding gene therapy trials.
 
-To date, the HPO has largely been manually curated by experts including clinicians, clinical geneticists, and researchers. Although this approach ensures the quality and accuracy of the ontology, it is time-consuming and labor-intensive. As artificial intelligence (AI) capabilities advance, there is an opportunity to integrate natural language processing technologies into assisting in the curation process. Here, we have used chatGPT to systematically annotate the severity of all 18,057 phenotypic abnormalities within the HPO. Our annotation framework was developed based on previously defined criteria for classifying disease severity [Lazarin et al 2014]. Lazarin et al (2014) consulted healthcare professionals to test their proposed algorithm that through combining clinical characteristics of a genetic disease, you can accurately categorise the diseases' severity as profound, severe, moderate, or mild. 
+To date, the HPO has largely been manually curated by experts including clinicians, clinical geneticists, and researchers. Although this approach ensures the quality and accuracy of the ontology, it is time-consuming and labor-intensive. As artificial intelligence (AI) capabilities advance, there is an opportunity to integrate natural language processing technologies into assisting in the curation process. Here, we have used the OpenAI GPT-4 model with Python to systematically annotate the severity of \> 17,000 phenotypic abnormalities within the HPO. Our annotation framework was developed based on previously defined criteria for classifying disease severity \[Lazarin et al 2014\]. Lazarin et al (2014) consulted healthcare professionals to test their proposed algorithm that through combining clinical characteristics of a genetic disease, you can accurately categorise the diseases' severity as profound, severe, moderate, or mild.
 
-
-
-We have validated our approach and provide examples of how it can aid in prioritising gene therapy trials for rare diseases. Ultimately, we hope that our resource will be of utility to those working in rare diseases, as well as the wider rare disease community. 
+We have validated our approach and provide examples of how it can aid in prioritising gene therapy trials in specific cell types for rare diseases or their associated phenotypes. Ultimately, we hope that our resource will be of utility to those working in rare diseases, as well as the wider rare disease community.
 
 ### Results
 
-### Methods
+#### Phenotypic abnormality annotation using OpenAI GPT-4
 
-Phenotypic abnormality annotation using OpenAI GPT-4
-<<<<<<< HEAD
-We employed the OpenAI GPT-4 model with Python to annotate 18,057 terms within the Human Phenotype Ontology (HPO). Our annotation framework was developed based on previously defined criteria for classifying disease severity [Lazarin et al 2014]. We sought to evaluate the impact of various phenotypes on factors including intellectually disability, death, impairmed mobility, physical malformations, blindness, sensory impairments, immunodeficiency, cancer, reduced fertility, and congenital onset. Through prompt design we found that the performance of GPT-4 improved when we incorporated a scale associated with each effect and required a jsutifcation for each response. For each effect, we asked about the likelihood of its occurrence - whether it never, rarely, often, or always occurred. Furthermore, our prompt design revealed that the optimal trade-off between the number of annotations and performance was achieved when inputting no more than two or three phenotypes per prompt. Below is an example prompt: 
+We employed the OpenAI GPT-4 model with Python to annotate 18,057 terms within the Human phenotype Ontology (HPO). Our annotation framework was developed based on previously defined criteria for classifying disease severity \[Lazarin et al 2014\]. We sought to evaluate the impact of various phenotypes on factors including intellectually disability, death, impairmed mobility, physical malformations, blindness, sensory impairments, immunodeficiency, cancer, reduced fertility, and congenital onset. Through prompt design we found that the performance of GPT-4 improved when we incorporated a scale associated with each effect and required a justifcation for each response. For each effect, we asked about the likelihood of its occurrence - whether it never, rarely, often, or always occurred. Furthermore, our prompt design revealed that the optimal trade-off between the number of annotations and performance was achieved when inputting no more than two or three phenotypes per prompt. Below is an example prompt:
 
 "I need to annotate phenotypes as to whether they typically cause: intellectual disability, death, impaired mobility, physical malformations, blindness, sensory impairments, immunodeficiency, cancer, reduced fertility? Do they have congenital onset? To answer, use a severity scale of: never, rarely, often, always. Do not consider indirect effects. You must provide the output in python code as a data frame called df with columns: phenotype, intellectual_disability, death, impaired_mobility, physical_malformations, blindness, sensory_impairments, immunodeficiency, cancer, reduced_fertility, congenital_onset. Also add a separate justification column for each outcome, e.g. death, death_justification. These are the phenotypes: Extracranial internal carotid artery dissection; Pulmonary arteriovenous fistulas."
-=======
-We employed the OpenAI GPT-4 model with Python to annotate 18,057 terms within the Human Phenotype Ontology (HPO). Our annotation framework was developed based on previously defined criteria for classifying disease severity [Lazarin et al 2014]. We sought to evaluate the impact of various phenotypes on factors including intellectually disability, death, impairmed mobility, physical malformations, blindness, sensory impairments, immunodeficiency, cancer, reduced fertility, and congenital onset. Through prompt design we found that the performance of GPT-4 improved when we incorporated a scale associated with each effect and required a jsutifcation for each response. For each effect, we inquired about the likelihood of its occurrence - whether it never, rarely, often, or always occurred. Furthermore, our prompt design revealed that the optimal trade-off between the number of annotations and performance was achieved when inputting no more than three phenotypes per prompt.
->>>>>>> bb3888e542860f13ad812f3359cb5d0716ba6ca7
+
+The phenotype outcome occurrence varied by category. While \> 50% of annotated phenotypes never caused blindness, cancer, immunodeficiency, intellectual disability, reduced fertility, and sensory impairment, a similar proportion often or always had congenital onset.
+
+```{r occurence_plot}
+#| echo: false
+#| warning: false
+
+# read in gpt annotations 
+gpt_annot <- read.csv("~/Documents/PhD/rare_disease/gpt4_hpo_annotations_id.csv")
+gpt_annot <- data.table(gpt_annot)
+
+# subset to categories 
+occurr_df <- gpt_annot[,c("hpo_name", "intellectual_disability", "death", "impaired_mobility", "blindness",
+                               "sensory_impairments", "immunodeficiency", "cancer", "reduced_fertility",
+                               "congenital_onset")]
+
+cols_of_interest <- names(occurr_df)[-1]
+
+# Create an empty dataframe to store the counts
+count_df <- data.frame(matrix(0, nrow = length(cols_of_interest), ncol = 4))
+colnames(count_df) <- c("always", "often", "rarely", "never")
+rownames(count_df) <- cols_of_interest
+
+# Loop through each column of interest and count the occurrences of 'always', 'often', 'rarely', 'never'
+for (col in cols_of_interest) {
+  # Count occurrences of 'always', 'often', 'rarely', 'never' for the current column
+  counts <- table(occurr_df[[col]])
+  
+  # Assign the counts to the corresponding row in count_df
+  count_df[col, ] <- counts[match(colnames(count_df), names(counts))]
+}
+
+# Reshape the count dataframe from wide to long format
+count_df_long <- gather(count_df, key = "condition", value = "count", always:never)
+count_df_long$category <- rownames(count_df)
+
+# Reorder the columns
+count_df_long$category <- gsub("_", " ", count_df_long$category)
+count_df_long$condition <- factor(count_df_long$condition, levels=c("always", "often", "rarely", "never"))
+
+count_df_long <- count_df_long %>%
+    dplyr::group_by(category) %>%
+    dplyr::mutate(percentage = count / sum(count) * 100)
+
+# Create the stacked bar plot
+ggplot(count_df_long, aes(x = category, y = count, fill = condition)) +
+  geom_bar(stat = "identity") +
+  labs(title = "HPO term outcome occurrence",
+       x = "", y = "HPO phenotypes (n)", fill = NULL) +
+  theme_minimal() +
+  theme(legend.position = "right", plot.title = element_text(hjust=0.5), 
+        text = element_text(size=16),
+        axis.text.x = element_text(angle=90, size=16, hjust=1, vjust=0.5)) +
+  scale_fill_manual(values = wes_palette("GrandBudapest2"))
+
+# ggsave("hpo_pheno_outcome_occurrence.pdf", height=10, width=10)
+```
+
+#### Annotation consistency
+
+To test for annotation consistency, a proportion of phenotypes were annotated more than once. Besides the congenital onset annotation, which was annotated consistently for \~ 50% , at least 70% of phenotypes were annotated consistently with regards to their outcomes.
+
+```{r consistency}
+#| echo: false
+#| warning: false
+
+# Annotation consistency 
+
+# get phenotypes that were annotated more than once
+replicates <- occurr_df %>% 
+  group_by(phenotype) %>%
+  filter(n() > 1)
+
+replicate_counts <- replicates %>%
+  add_count(phenotype, name = "replicate_number") %>%
+  group_by(phenotype) %>%
+  summarise_all(function(x) sum(x == first(x)))  
+
+# Calculate consistency across phenotype annotations
+columns <- setdiff(names(replicates), c("phenotype", "replicate_number"))
+
+consistency_df <- data.frame(annotation_match = rep(0, length(columns)),
+                        annotation_mismatch = rep(0, length(columns)),
+                        row.names = columns)
+
+for (col in columns) {
+  # Count the number of matches and mismatches
+  match_count <- sum(replicate_counts[[col]] == replicate_counts$replicate_number)
+  mismatch_count <- sum(replicate_counts[[col]] != replicate_counts$replicate_number)
+  
+  # Update the result data frame
+  consistency_df[col, "annotation_match"] <- match_count
+  consistency_df[col, "annotation_mismatch"] <- mismatch_count
+}
 
 
-Validation
+consistency_df_long <- gather(consistency_df, key = "annotation_type", value = "count", annotation_match:annotation_mismatch)
+consistency_df_long$category <- rownames(consistency_df)
+
+# Create the stacked bar plot
+consistency_df_long <- consistency_df_long %>%
+  group_by(category) %>%
+  mutate(percentage = count / sum(count) * 100)
+
+consistency_df_long$category <- gsub("_", " ", consistency_df_long$category)
+
+ggplot(consistency_df_long, aes(x = category, y = percentage, fill = annotation_type)) +
+  geom_bar(stat = "identity", position = "fill") +
+  labs(title = "Annotation consistency",
+       x = "", y = "HPO phenotypes (%)", fill=NULL) +
+  theme_minimal() +
+  theme(legend.position = "bottom", plot.title = element_text(hjust = 0.5),axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_manual(values = wes_palette("GrandBudapest1"))
 
 
+```
+
+#### Annotation validation
+
+In order to validate our annotations we aimed to calculate the true positive rate. This involved identifying specific branches within the HPO that would contain phenotypes that would reliably indicate the presence of certain conditions. For instance, the phenotypes 'decreased fertility in females' and 'decreased fertility in males' should, in the annotations, often, if not always, cause reduced fertility. We observed a remarkable true positive rate exceeding 90% across all phenotype outcomes. This high level of accuracy underscores the robustness of our annotations and the reliability of the HPO framework in capturing clinically relevant phenotypic information.
+
+hpo \<- get_hpo()
+
+hpo \<- data.frame(phenotype = hpo\[\["name"\]\], hpo_id = hpo\[\["id"\]\])
+
+\# merge hpo ids with annotations
+
+all_hpo_annot \<- merge(gpt_annot, hpo, by = "phenotype")
+
+all_hpo_annot \<- data.table(all_hpo_annot)
+
+\# run Brian's checks function
+
+annot_checks \<- HPOExplorer::gpt_annot_check(annot = all_hpo_annot, query_hits = search_hpo())
+
+true_pos_rate \<- data.frame(rate=annot_checks\[\["true_pos_rate"\]\], count=annot_checks\[\["checkable_count"\]\])
+
+true_pos_rate\$category \<- rownames(true_pos_rate)
+
+true_pos_rate\$category \<- gsub("\_", " ", true_pos_rate\$category)
+
+```{r validation}
+#| echo: false
+#| warning: false
+# Annotation true positives
+
+# get all hpo data
+hpo <- get_hpo()
+hpo <- data.frame(phenotype = hpo[["name"]], hpo_id = hpo[["id"]])
+
+# merge hpo ids with annotations 
+all_hpo_annot <- merge(d, hpo, by = "hpo_name")
+all_hpo_annot <- data.table(all_hpo_annot)
+
+# run Brian's checks function 
+annot_checks <- HPOExplorer::gpt_annot_check(annot = all_hpo_annot, query_hits = search_hpo())
+
+true_pos_rate <- data.frame(rate=annot_checks[["true_pos_rate"]], count=annot_checks[["checkable_count"]])
+true_pos_rate$category <- rownames(true_pos_rate)
+
+true_pos_rate$category <- gsub("_", " ", true_pos_rate$category)
+
+ggplot(true_pos_rate, aes(x = category, y = rate)) +
+    geom_bar(stat = "identity", fill = "#D67236") +
+    geom_text(aes(label = paste("n =", count)), vjust = -0.5, size = 3) + 
+    labs(title = "True positive rate",
+         x = "", y = "HPO phenotypes (%)", fill=NULL) +
+    theme_minimal() +
+    theme(legend.position = "bottom", plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+#### Quantifying phenotypic severity
+
+By quantifying phenotypic severity we can guide prioritisation of gene therapy trials for rare diseases or their associated phenotypes. First, we created a dictionary to map each phenotype outcome (e.g. blindness) and its response (always, often, rarely, never) to numeric values from. Then, the phenotype outcome values were multipled by their associated response values. Importantly, the values reflected the severity of each outcome based on both the outcome itself and the frequency of the response. For instance, a phenotype always causing death would have a higher multiplied value than a phenotype rarely causing reduced fertility. Next, we computed an average score for each phenotype by aggregating the multiplied values across all phenotype outcomes and then calculating the mean. This was then normalised by the theoretical maximum severity score, so that all phenotypes were on a 0-100 severity scale (where 100 is the most severe phenotype possible). This average normalised score represents the overall severity of the phenotype based on the severity of its individual outcomes.
+
+Based on these scores we evaluated the top 50 severe phenotypes. The most severe phenotype was 'acute nectrotizing encephalopathy', a rapidly progressing encephalopathy. It is often trigged by viral infections, including influenza and SARS-CoV-2, and is characterised by neurological deficits including loss of consciousness and seizures. The genetic form of the disease, associated with a mutation in RANBP2, can be recurrent and has high mortality and morbidity. The second most severe phenotype, 'abnormality of mucopolyscccharide metabolism', is associated with the group of rare metabolic diseases known as mucopolysaccharidoses characterised by the body's inability to break down glycosaminoglycans. Individuals with these disorders have reduced life expectancy with symptoms including cardiac problems, bone and joint abnormalities, vision and hearing impairments, and neurological deficits. Notably, gene therapy for mucopolysaccharidoses is gaining prominence as a therapeutic intervention. For example, mucopolysaccharidosis type II, also referred to as Hunter syndrome, recently received approval for a clinical trial for autologous hematopoietic stem cell gene therapy.
+
+Comparison of the severity scores for each response, across the phenotype outcomes annotated, revealed consistent trends: as the response of the phenotype outcome increased (from never to always), the severity score also increased. We also evaluated the severity score distribution by HPO branch and calculated the mean severity score using all phenotypes within a HPO branch. The highest severity score mean was for the HPO branch 'history of bone marrow transplant', although this branch only had one phenotype. The second highest was for 'neoplasm', likely due to the cancer related phenotypes falling within this branch.
+
+```{r quant_pheno_severity}
+#| echo: false
+#| warning: false
+
+coded <- HPOExplorer::gpt_annot_codify(annot = all_hpo_annot)
+
+plts <- HPOExplorer::gpt_annot_plot(annot = all_hpo_annot)
+
+# below is the code from gpt_annot_plot with new edits
+plts$gp0
+
+plts$gp2 
+
+plts$gp3
+
+```
 
 ### Discussion
+
+Here, we present a novel approach leveraging the OpenAI GPT-4 model, to systematically annotate the severity of 17,000 phenotypic abnormalities within the HPO. Our findings highlight the potential of natural language processing technologies in significantly contributing to the automation and refinement of the curation process in genomics and rare disease research.
+
+Manual curation of ontologies has traditionally relied on expert input, a process that is both time-consuming and labor-intensive. By employing advanced AI capabilities, we have demonstrated the feasibility of automating this process, significantly enhancing efficiency without compromising accuracy. Our validation approach yielded a high true positive rate exceeding 90% across the phenotypes tested. Furthermore, our approach can be readily adapted and scaled to accommodate the growing volume of phenotypic data.
+
+A key contribution of our study is the development of a severity scoring system that integrates both the nature of the phenotype outcome and the frequency of its occurrence. By quantifying the phenotypic severity this way, we provide a comprehensive framework for prioritising gene therapy trials and guiding clinical decision-making in rare diseases. Our analysis of the top 50 severe phenotypes identified conditions with potentially significant clinical impact, including 'acute necrotizing encephalopathy' and 'abnormality of mucopolysaccharide metabolism'. These findings not only highlight the most impactful conditions but also underscore the potential of gene therapy as a therapeutic intervention for rare diseases, as exemplified by recent advancements in mucopolysaccharidosis type II, a rare disease associated with 'abnormality of mucopolysaccharide metabolism'.
+
+While our study demonstrates the feasibility and utility of AI-driven phenotypic annotation, several limitations must be acknowledged. The reliance on computational algorithms may introduce biases or inaccuracies inherent to the training data, necessitating ongoing validation and refinement of our approach. Additionally, our severity scoring system, while comprehensive, may not capture the full spectrum of phenotypic variability or account for complex gene-environment interactions. Future research should focus on further optimising AI-driven annotation methodologies, incorporating additional data modalities such as genomic and clinical data to enhance accuracy.
+
+In conclusion, our study represents a significant step towards harnessing the power of AI to advance phenotypic annotation and severity assessment in rare diseases. This resource aims to provide researchers and clinicians with actionable insights that can inform gene therapy strategies and improve the lives of individuals affected by rare diseases
+
+### Methods
 
 ### Data availability
 
 ### Code availability
 
 ## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
-
-```{r}
-1 + 1
-```
-
-You can add options to executable code like this
-
-```{r}
-#| echo: false
-2 * 2
-```
-
-The `echo: false` option disables the printing of code (only output is displayed).
