@@ -3,7 +3,12 @@ title: "Rare Disease Celltyping"
 subtitle: "CSL Areas of Interest"
 author: "Brian M. Schilder"
 date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
-output: html_document
+output: 
+  html_document:
+    code_folding: hide
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
 ```{r setup, include=TRUE}
@@ -20,16 +25,40 @@ knitr::opts_chunk$set(warning = FALSE,
 
 ```
 
+Here, we wanted to map [CSL](https://www.csl.com/) areas of interest
+onto the Human Phenotype Ontology (HPO) and/or other disease ontologies
+(OMIM/ORPH). This allowed us to connect our phenotype-cell type
+association results to the CSL areas of interest. For a description of
+our methodology, see here:
+
+> Identification of cell type-specific gene targets underlying thousands
+> of rare diseases and subtraits Kitty B. Murphy, Robert Gordon-Smith,
+> Jai Chapman, Momoko Otani, Brian M. Schilder, Nathan G. Skene
+> <https://www.medrxiv.org/content/10.1101/2023.02.13.23285820v1>
 
 ## Import data
 
 ### Import CSL areas of interest
 
-CSL areas of interest mapped onto Human Phenotype Ontology (HPO) and/or other disease ontologies (OMIM/ORPH).
+First, we:
+
+-   Gathered all diseases/phenotypes that CSL lists on their website
+    and/or the Research Accelerator Initiative materials.
+
+-   For each disease/phenotype, we assigned a Group based on whether CSL
+    has expressed interest in Early Stage Partnering with external labs
+    (e.g. via the RAI) or whether they are already actively pursuing
+    research in these fields.
+
+-   We then grouped each disease/phenotype into a broader Area
+    ("Immunology") and a particular disease Subarea ("Dermatomyositis").
+
+-   Next, we mapped each disease/phenotype onto a standardised HPO ID or
+    OMIM/Orphanet ID.
 
 ```{r}
 csl <- data.table::fread(here::here("data/CSL_areas_of_interest.tsv"))
-csl <- csl[Group=="Early Stage Partnering"]
+# csl <- csl[Group=="Early Stage Partnering"]
 # extract IDs from the Entry column of csl data.table with the pattern "HP:", "OMIM:", "ORPHA:" and put into a new col
 csl[, ID := stringr::str_extract(Entry, "HP:\\d+|OMIM:\\d+|ORPHA:\\d+")]
 # extract names from Entry column WITHOUT the ID
@@ -38,8 +67,9 @@ csl[, Name := trimws(stringr::str_remove(Entry, "HP:\\d+|OMIM:\\d+|ORPHA:\\d+"))
 MSTExplorer::create_dt(csl)
 ```
 
-Extract IDs of phenotypes and diseases.
-Get any descendants of manually mapped HPO IDs as well.
+Next, I took all the HPO IDs and expanded this list to any HPO terms
+that are descendants of the original HPO IDs. This allows us to capture
+any phenotypes that are more specific than the original CSL HPO IDs.
 
 ```{r}
 hpo_ids <- csl[grepl("HP:",ID)]$ID |> unique()
@@ -54,6 +84,10 @@ hpo_ids_extended <- unlist(hpo_ids_list) |> unique()
 
 ### Import phenotype-cell type association results
 
+Next, I imported the results of our phenotype-cell type association
+analysis. This analysis was performed using the `MSTExplorer` package
+and the results are stored in a data.table.
+
 ```{r}
 results <- MSTExplorer::load_example_results()
 results <- HPOExplorer::add_hpo_name(results, hpo = hpo)
@@ -66,9 +100,17 @@ results[,effect:=estimate]
 p2g <- HPOExplorer::load_phenotype_to_genes()
 ```
 
-
 ## Prioritise targets
-  
+
+We developed a pipeline to help filter down our results to identif the
+promise promising gene targets for the most severe phenotypes. It
+includes a number of different steps, including filtering on cell type
+specific gene expression and the evidence supporting the causal
+relationships between each gene and a phenotype.
+
+Ultimately, it allows us to trace multi-scale disease mechanisms from
+genes --\> cell types --\> phenotypes --\> diseases
+
 ```{r}
 prioritise_targets_out <- MSTExplorer::prioritise_targets(
   results = results, 
@@ -96,8 +138,25 @@ targets <- all_targets[
 MSTExplorer::create_dt(head(targets,100))
 ```
 
-Summarise results: 
+### Summary
+
+Here we summarise the percentage of CSL phenotypes of interest (with HPO
+IDs) included in our prioritised cell type-specific targets. We also
+compute the proportion of CSL diseases (with OMIM/Orphanet IDs) that
+have at least one of those phenotypes as a symptom.
+
 ```{r, message=TRUE}
+
+message(paste0(
+  length(intersect(results$hpo_id,hpo_ids_extended)),"/",
+        length(unique(hpo_ids_extended)),
+        " (",round(length(intersect(hpo_ids_extended,results$hpo_id))/
+                  length(unique(hpo_ids_extended))*100,2),"%)",
+        " CSL phenotypes",
+  " covered in our phenotype-cell type association results."
+))
+
+
 message(paste0(
   length(intersect(all_targets$hpo_id,hpo_ids_extended)),"/",
         length(unique(hpo_ids_extended)),
@@ -108,18 +167,17 @@ message(paste0(
 ))
 ```
 
-
 ### Get the top candidates per area of interest
- 
-#### Per HPO ancestor
+
+From our list of prioritised cell type-specific gene targets, we can now
+select the top targets for each CSL area of interest.
+
+We have arbitrarily set a cutoff of 3 targets per area, but this can
+easily be adjusted as needed.
 
 ```{r}
-top_targets_ancestor <- targets[!duplicated(ancestor_name),] 
-```
-
-#### Per CSL area of interest
-
-```{r}
+top_n <- 3
+# top_targets_ancestor <- targets[!duplicated(ancestor_name),] 
 csl_areas <- unique(csl[,c("ID","Area","Subarea")])
 targets2 <- targets |>
   merge(csl_areas,
@@ -132,7 +190,7 @@ targets2[,Area:=data.table::fcoalesce(Area.x,Area.y)]
 targets2[,Subarea:=data.table::fcoalesce(Subarea.x,Subarea.y)]
 #### Select top N targets per CSL Area ####
 num_cols <- sapply(targets2,is.numeric)
-top_targets <- targets2[!is.na(Area), head(.SD,3), 
+top_targets <- targets2[!is.na(Area), head(.SD,top_n), 
                                by=c("Area")]
 # drop list columns
 # save_path <- here::here("reports/top_targets_CSL.tsv")
@@ -142,6 +200,9 @@ top_targets <- targets2[!is.na(Area), head(.SD,3),
 
 MSTExplorer::create_dt(top_targets)
 ```
+
+We can also count the number of targets, genes, phenotypes and diseases
+per area of interest.
 
 ```{r}
 target_counts <- targets2[,list(n_targets=.N, 
@@ -154,19 +215,29 @@ target_counts <- targets2[,list(n_targets=.N,
 MSTExplorer::create_dt(target_counts)
 ```
 
-
-
 ## Explore top targets
+
+Now that we have the top candidate targets for CSL disease areas, we can
+explore them in more detail. For example, we can use additional
+resources (ClinVar, Variant Effect Predictor, gnomad) to find out which
+variants are deleterious within (or around) the gene targets. We can
+also gathered population-level data on the frequency of these variants,
+giving us a better idea of the number of patients that may benefit from
+treating this particular mechanism.
 
 ### Stroke
 
-Check for other results with the same cell type and gene target.
+Let's first explore phenotypes related to "Stroke".
+
+As an example, we're going to look specifically at the role of *COL4A1*
+in stroke.
+
 ```{r}
 stroke_targets <- targets2[grepl("stroke",hpo_name, ignore.case = TRUE)]
 stroke_targets <- stroke_targets[gene_symbol=="COL4A1"]
 ```
 
-### ClinVar
+#### ClinVar
 
 ```{r include=FALSE, eval=FALSE}
 cv <- KGExplorer::get_clinvar(annotate = TRUE)
@@ -190,14 +261,29 @@ KGExplorer::plot_clinvar(cv_gene
                          )
 ```
 
-### gnomad
+#### gnomad
 
-https://gnomad.broadinstitute.org/gene/ENSG00000187498?dataset=gnomad_r4
+We gathered additional data from the gnomad website on the *COL4A1* gene
+(i.e.
+[ENSG00000187498](https://gnomad.broadinstitute.org/gene/ENSG00000187498?dataset=gnomad_r4)).
 
-COL4A1 exonn positions:
-https://www.ensembl.org/Homo_sapiens/Transcript/Exons?db=core;g=ENSG00000187498;r=13:110213499-110214499;t=ENST00000375820;v=rs34004222;vdb=variation;vf=813354076
+Our goal here was to:
 
-Exon 3: chr13:110213926-110214015
+-   Identify confirmed pathogenic variants in *COL4A1*.
+
+-   Check the frequency of these variants in the general population.
+
+-   Identify a particular exon that has the highest frequency of
+    pathogenic variants. The idea being that this exon could be a good
+    target for therapeutic intervention via ASO-induced exon-skipping.
+
+Additional info:
+
+-   [Genomic coordinates of each *COL4A1* exon can be found
+    here.](https://www.ensembl.org/Homo_sapiens/Transcript/Exons?db=core;g=ENSG00000187498;r=13:110213499-110214499;t=ENST00000375820;v=rs34004222;vdb=variation;vf=813354076)
+
+-   Exon 3 spans the following genomic coordinates:
+    chr13:110213926-110214015
 
 ```{r}
 #### Import ####
@@ -240,6 +326,19 @@ gn_top[,head(.SD,1),by="exon_id",
   MSTExplorer::create_dt()
 ```
 
+We found two exons with the highest cumulative frequency of pathogenic
+variants in the *COL4A1* gene. Of these, exon 3 has the highest
+cumulative frequency of pathogenic variants.
+
+Follow up research into the existing literature was carried out (not
+shown here), to confirm whether:
+
+-   any similar therapies currently existing for this gene
+
+-   exon 3 could be safely skipped
+
+-   there are any animal models available for the homologous exons in
+    this gene
 
 ```{r include=FALSE, eval=FALSE}
 sort(table(gn$VEP.Annotation), decreasing = TRUE)
@@ -329,7 +428,9 @@ rhdf5::h5read(public_S3_url,
 ## Session info
 
 <details>
+
 ```{r}
 sessionInfo()
 ```
+
 </details>
