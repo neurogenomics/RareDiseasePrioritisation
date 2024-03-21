@@ -5,9 +5,8 @@ author: "Brian M. Schilder"
 date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
 output: 
   html_document:
-editor_options: 
-  markdown: 
-    wrap: 72
+    toc: true
+    theme: simplex
 ---
 
 ```{r setup, echo=FALSE}
