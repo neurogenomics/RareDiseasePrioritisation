@@ -84,7 +84,7 @@ hpo_ids_extended <- unlist(hpo_ids_list) |> unique()
 
 ### Import phenotype-cell type association results
 
-Next, I imported the results of our phenotype-cell type association
+Next, we imported the results of our phenotype-cell type association
 analysis. This analysis was performed using the `MSTExplorer` package
 and the results are stored in a data.table.
 
@@ -102,7 +102,7 @@ p2g <- HPOExplorer::load_phenotype_to_genes()
 
 ## Prioritise targets
 
-We developed a pipeline to help filter down our results to identif the
+We developed a pipeline to help filter down our results to identify the
 promise promising gene targets for the most severe phenotypes. It
 includes a number of different steps, including filtering on cell type
 specific gene expression and the evidence supporting the causal
