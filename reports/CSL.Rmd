@@ -138,6 +138,40 @@ targets <- all_targets[
 MSTExplorer::create_dt(head(targets,100))
 ```
 
+### Validate targets
+
+```{r ttd_check, fig.height=10, fig.width=10}
+## Gene therapy only
+ttd_check_out <- MSTExplorer::ttd_check(
+  top_targets=prioritise_targets_out$top_targets, 
+  drug_types = "Gene therapy",
+  allow.cartesian = TRUE,
+  show_plot = FALSE)
+
+## All therapy types
+ttd_check_all_out <- MSTExplorer::ttd_check(
+  top_targets=prioritise_targets_out$top_targets,   
+  allow.cartesian = TRUE,
+  show_plot = FALSE)
+```
+
+To determine whether the genes prioritised by our therapeutic targets pipeline were plausible, we checked what percentage of gene therapy targets we recapitulated.
+Data on therapeutic approval status was gathered from the Therapeutic Target Database (TTD; release `r Sys.Date()`).
+Overall, we prioritised `r format(sum(ttd_check_out$data[failed==FALSE]$prioritised)/nrow(ttd_check_out$data[failed==FALSE])*100,digits=1)`% of all non-failed existing gene therapy targets.
+A hypergeometric test confirmed that our prioritised targets were significantly enriched for non-failed gene therapy targets (`r paste0("$p=",format(ttd_check_out$ttd_hypergeo_out$nonfailed_enrichment,digits=3),"$")`).
+Importantly, we did not prioritise any of the failed therapeutics (`r format(sum(ttd_check_out$data[failed==TRUE]$prioritised)/nrow(ttd_check_out$data[failed==TRUE])*100, digits=1)`%), defined as having been terminated or withdrawn from the market.
+The hypergeometric test for depletion of failed targets did not reach significance (`r paste0("$p=",format(ttd_check_out$ttd_hypergeo_out$failed_depletion,digits=3),"$")`), but this is to be expected as there was only one failed gene therapy target in the TTD database.
+
+Even when considering therapeutics of any kind, not just gene therapies, we recapitulated `r format(sum(ttd_check_all_out$data[failed==FALSE]$prioritised)/nrow(ttd_check_all_out$data[failed==FALSE])*100,digits=1)`% of the non-failed therapeutic targets and `r format(sum(ttd_check_all_out$data[failed==TRUE]$prioritised)/nrow(ttd_check_all_out$data[failed==TRUE])*100, digits=1)`% of the terminated/withdrawn therapeutic targets (n=`r nrow(ttd_check_all_out$data[failed==TRUE])`).
+Here we found that our prioritised targets were significantly enriched for non-failed therapeutics (`r paste0("$p=",format(ttd_check_all_out$ttd_hypergeo_out$nonfailed_enrichment,digits=1),"$")`), and highly significantly depleted for failed therapeutics (`r paste0("$p=",format(ttd_check_all_out$ttd_hypergeo_out$failed_depletion,digits=1),"$")`).
+This suggests that our multi-scale evidence-based prioritisation pipeline is capable of selectively identifying genes that are likely to be effective therapeutic targets.
+
+```{r}
+ttd_check_out$plot + patchwork::plot_annotation(title = "Gene therapy targets")
+ttd_check_all_out$plot + patchwork::plot_annotation(title = "All therapy targets")
+```
+
+
 ### Summary
 
 Here we summarise the percentage of CSL phenotypes of interest (with HPO
