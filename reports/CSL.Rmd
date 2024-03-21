@@ -67,7 +67,7 @@ csl[, Name := trimws(stringr::str_remove(Entry, "HP:\\d+|OMIM:\\d+|ORPHA:\\d+"))
 MSTExplorer::create_dt(csl)
 ```
 
-Next, I took all the HPO IDs and expanded this list to any HPO terms
+Next, we took all the HPO IDs and expanded this list to any HPO terms
 that are descendants of the original HPO IDs. This allows us to capture
 any phenotypes that are more specific than the original CSL HPO IDs.
 
