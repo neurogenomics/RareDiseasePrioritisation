@@ -6,6 +6,7 @@ date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
 output: 
   html_document:
     toc: true
+    toc_float: true
     theme: simplex
 ---
 
