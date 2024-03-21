@@ -5,13 +5,12 @@ author: "Brian M. Schilder"
 date: "<h4>Updated: <i>`r format( Sys.Date(), '%b-%d-%Y')`</i></h4>"
 output: 
   html_document:
-    code_folding: hide
 editor_options: 
   markdown: 
     wrap: 72
 ---
 
-```{r setup, include=TRUE}
+```{r setup, echo=FALSE}
 if(!requireNamespace("MSTExplorer", quietly = TRUE)){
   remotes::install_github("neurogenomics/MSTExplorer", dependencies = TRUE)
 }
