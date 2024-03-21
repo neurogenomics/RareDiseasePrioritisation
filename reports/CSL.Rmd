@@ -19,8 +19,9 @@ if(!requireNamespace("echodata", quietly = TRUE)){
   remotes::install_github("RajLabMSSM/echodata", dependencies = TRUE)
 }
 
-knitr::opts_chunk$set(warning = FALSE,
-                      cache = TRUE,
+knitr::opts_chunk$set(cache = TRUE,
+                      echo = FALSE,
+                      warning = FALSE,
                       message = FALSE) 
 
 ```
@@ -128,7 +129,11 @@ prioritise_targets_out <- MSTExplorer::prioritise_targets(
   evidence_score_threshold=3,  ## 5:47, 4:47, 3:64
   top_n = 10, ## 5:38, 20:42, 30:45, 40:52, 50:55
   group_vars = "hpo_id")
- 
+```
+
+Below we show a preview of the top 100 of these prioritised targets: 
+
+```{r}
 all_targets <- prioritise_targets_out$top_targets
 targets <- all_targets[
   (hpo_id %in% hpo_ids_extended 
@@ -255,7 +260,7 @@ Now that we have the top candidate targets for CSL disease areas, we can
 explore them in more detail. For example, we can use additional
 resources (ClinVar, Variant Effect Predictor, gnomad) to find out which
 variants are deleterious within (or around) the gene targets. We can
-also gathered population-level data on the frequency of these variants,
+also gather population-level data on the frequency of these variants,
 giving us a better idea of the number of patients that may benefit from
 treating this particular mechanism.
 
